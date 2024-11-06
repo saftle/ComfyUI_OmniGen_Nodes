@@ -5,7 +5,7 @@
 This node is an unofficial wrapper of the [OmniGen](https://github.com/VectorSpaceLab/OmniGen), running in ComfyUI.    
 The quantization code is referenced from [Manni1000/OmniGen](https://github.com/Manni1000/OmniGen).
 
-[中文说明点这里](./README_CN.MD)
+[中文说明点这里](./README_CN.md)
 
 
 
