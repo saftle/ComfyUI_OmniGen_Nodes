@@ -36,11 +36,11 @@ python -s -m pip install -r ComfyUI/custom_nodes/ComfyUI_OmniGen_Wrapper/require
 ### 节点参数说明
 ![image](image/omnigen_wrapper_node.jpg)
 
-* image_1: 可选输入图片1。如果输入，须在prompt中描述此图，用```{imgae_1}```指代。
-* image_2: 可选输入图片2。如果输入，须在prompt中描述此图，用```{imgae_2}```指代。
-* image_3: 可选输入图片3。如果输入，须在prompt中描述此图，用```{imgae_3}```指代。
+* image_1: 可选输入图片1。如果输入，须在prompt中描述此图，用```{image_1}```指代。
+* image_2: 可选输入图片2。如果输入，须在prompt中描述此图，用```{image_2}```指代。
+* image_3: 可选输入图片3。如果输入，须在prompt中描述此图，用```{image_3}```指代。
 * dtype: 模型精度，default为模型默认精度, 可选int8。默认精度大约占用12GB显存，int8大约占用7GB显存。
-* prompt: 生成图片的提示词。如果有图片输入，请用```{imgae_1}```、```{imgae_2}```、```{imgae_3}```指代。
+* prompt: 生成图片的提示词。如果有图片输入，请用```{image_1}```、```{image_2}```、```{image_3}```指代。
 * width: 生成图片的宽度，必须为16的倍数。
 * height: 生成图片的高度，必须为16的倍数。
 * guidance_scale: 引导比例。较高的值会使模型的生成结果更倾向于条件，但可能损失图像的多样性和自由度。

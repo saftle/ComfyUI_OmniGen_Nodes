@@ -41,11 +41,11 @@ Alternatively, enter OmniGen Wrapper in the node search bar to find the node.
 ### Node Options
 ![image](image/omnigen_wrapper_node.jpg)
 
-* image_1: Optional input image_1. If input, this image must be described in the prompt and referred to as ```{imgae_1}```.
-* image_2: Optional input image_2. If input, this image must be described in the prompt and referred to as ```{imgae_2}```.
-* image_3: Optional input image_3. If input, this image must be described in the prompt and referred to as ```{imgae_3}```.
+* image_1: Optional input image_1. If input, this image must be described in the prompt and referred to as ```{image_1}```.
+* image_2: Optional input image_2. If input, this image must be described in the prompt and referred to as ```{image_2}```.
+* image_3: Optional input image_3. If input, this image must be described in the prompt and referred to as ```{image_3}```.
 * dtype: Model accuracy, default is the default model accuracy, optional int8. The default precision occupies approximately 12GB of video memory, while int8 occupies approximately 7GB of video memory.
-* prompt: The prompt or prompts to guide the image generation. If have image input, use the placeholder ```{imgae_1}```, ```{imgae_2}```, ```{imgae_3}``` to refer to it.
+* prompt: The prompt or prompts to guide the image generation. If have image input, use the placeholder ```{image_1}```, ```{image_2}```, ```{image_3}``` to refer to it.
 * width: The height in pixels of the generated image. The number must be a multiple of 16.
 * height: The width in pixels of the generated image. The number must be a multiple of 16.
 * guidance_scale: A higher value will make the generated results of the model more biased towards the condition, but may sacrifice the diversity and degrees of freedom of the image.
