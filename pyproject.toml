@@ -1,7 +1,7 @@
 [project]
 name = "ComfyUI_OmniGen_Wrapper"
 description = "ComfyUI custom node of OmniGen project."
-version = "1.0.0"
+version = "1.0.1"
 license = "MIT"
 dependencies = ["transformers", "diffusers", "numpy", "datasets", accelerate", "timm", "peft", "safetensors", "huggingface_hub"]
 

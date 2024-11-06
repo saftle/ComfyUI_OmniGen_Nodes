@@ -54,7 +54,7 @@ class DZ_OmniGenV1:
                     "default": 1024, "min": 16, "max": 2048, "step": 16
                 }),
                 "height": ("INT", {
-                    "default": 1024, "min": 8, "max": 2048, "step": 16
+                    "default": 1024, "min": 16, "max": 2048, "step": 16
                 }),
                 "guidance_scale": ("FLOAT", {
                     "default": 2.5, "min": 1.0, "max": 5.0, "step": 0.1
