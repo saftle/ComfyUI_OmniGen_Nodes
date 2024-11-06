@@ -110,6 +110,7 @@ class OmniGenPipeline:
         self.device = device
 
     def vae_encode(self, x, dtype):
+        x = x.to(self.vae.config.get("dtype", torch.bfloat16))
         if self.vae.config.shift_factor is not None:
             x = self.vae.encode(x).latent_dist.sample()
             x = (x - self.vae.config.shift_factor) * self.vae.config.scaling_factor
