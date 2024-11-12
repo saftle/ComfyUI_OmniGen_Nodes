@@ -1,4 +1,5 @@
 # The code is revised from DiT
+import logging
 import os
 import torch
 import torch.nn as nn
@@ -241,7 +242,7 @@ class OmniGen(nn.Module, PeftAdapterMixin):
         config = Phi3Config.from_pretrained(model_name)
         model = cls(config)
         if os.path.exists(os.path.join(model_name, 'model.safetensors')):
-            print("Loading safetensors")
+            logging.debug("Loading safetensors")
             ckpt = load_file(os.path.join(model_name, 'model.safetensors'))
         else:
             ckpt = torch.load(os.path.join(model_name, 'model.pt'), map_location='cpu')
@@ -249,7 +250,7 @@ class OmniGen(nn.Module, PeftAdapterMixin):
 
         # Only quantize if explicitly requested
         if quantize:
-            print("Quantizing weights to 8-bit...")
+            logging.debug("Quantizing weights to 8-bit...")
             model._quantize_module(model.llm)
 
         return model
