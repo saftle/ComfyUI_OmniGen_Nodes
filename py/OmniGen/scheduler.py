@@ -1,4 +1,5 @@
 from tqdm import tqdm
+from comfy.utils import ProgressBar
 from typing import Optional, Dict, Any, Tuple, List
 import gc
 
@@ -159,6 +160,7 @@ class OmniGenScheduler:
         else:
             cache = OmniGenCache(num_tokens_for_img, offload_kv_cache) if use_kv_cache else None
         results = {}
+        pbar = ProgressBar(self.num_steps)
         for i in tqdm(range(self.num_steps)):
             timesteps = torch.zeros(size=(len(z), )).to(z.device) + self.sigma[i]
             pred, cache = func(z, timesteps, past_key_values=cache, **model_kwargs)
@@ -174,6 +176,7 @@ class OmniGenScheduler:
 
                 model_kwargs['position_ids'] = self.crop_position_ids_for_cache(model_kwargs['position_ids'], num_tokens_for_img)
                 model_kwargs['attention_mask'] = self.crop_attention_mask_for_cache(model_kwargs['attention_mask'], num_tokens_for_img)
+            pbar.update(1)
 
         del cache
         torch.cuda.empty_cache()  
