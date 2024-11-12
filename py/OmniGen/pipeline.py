@@ -1,3 +1,4 @@
+import logging
 import os
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -13,7 +14,6 @@ from diffusers.models import AutoencoderKL
 from diffusers.utils import (
     USE_PEFT_BACKEND,
     is_torch_xla_available,
-    logging,
     replace_example_docstring,
     scale_lora_layers,
     unscale_lora_layers,
@@ -22,8 +22,6 @@ from safetensors.torch import load_file
 
 from OmniGen import OmniGen, OmniGenProcessor, OmniGenScheduler
 
-
-logger = logging.get_logger(__name__) 
 
 EXAMPLE_DOC_STRING = """
     Examples:
@@ -62,7 +60,7 @@ class OmniGenPipeline:
             elif torch.backends.mps.is_available():
                 self.device = torch.device("mps")
             else:
-                logger.info("Don't detect any available GPUs, using CPU instead, this may take long time to generate image!!!")
+                logging.info("Don't detect any available GPUs, using CPU instead, this may take long time to generate image!!!")
                 self.device = torch.device("cpu")
 
         self.model.to(torch.bfloat16)
@@ -74,25 +72,25 @@ class OmniGenPipeline:
     @classmethod
     def from_pretrained(cls, model_name, vae_path: str=None, Quantization: bool=False):
         if not os.path.exists(model_name) or (not os.path.exists(os.path.join(model_name, 'model.safetensors')) and model_name == "Shitao/OmniGen-v1"):
-            logger.info("Model not found, downloading...")
+            logging.info("Model not found, downloading...")
             cache_folder = os.getenv('HF_HUB_CACHE')
             model_name = snapshot_download(repo_id=model_name,
                                            cache_dir=cache_folder,
                                            ignore_patterns=['flax_model.msgpack', 'rust_model.ot', 'tf_model.h5', 'model.pt'])
-            logger.info(f"Downloaded model to {model_name}")
-        logger.info(f"Loading OmniGen Model")
+            logging.info(f"Downloaded model to {model_name}")
+        logging.info(f"Loading OmniGen Model")
         model = OmniGen.from_pretrained(model_name, quantize=Quantization)
 
-        logger.info(f"Loading OmniGen Processor")
+        logging.info(f"Loading OmniGen Processor")
         processor = OmniGenProcessor.from_pretrained(model_name)
 
-        logger.info(f"Loading OmniGen VAE")
+        logging.info(f"Loading OmniGen VAE")
         if os.path.exists(os.path.join(model_name, "vae")):
             vae = AutoencoderKL.from_pretrained(os.path.join(model_name, "vae"))
         elif vae_path is not None:
             vae = AutoencoderKL.from_pretrained(vae_path)
         else:
-            logger.info(f"No VAE found in {model_name}, downloading stabilityai/sdxl-vae from HF")
+            logging.info(f"No VAE found in {model_name}, downloading stabilityai/sdxl-vae from HF")
             vae = AutoencoderKL.from_pretrained("stabilityai/sdxl-vae")
 
         return cls(vae, model, processor)
@@ -203,7 +201,7 @@ class OmniGenPipeline:
         Returns:
             A list with the generated images.
         """
-        logger.debug("Starting OmniGen pipeline")
+        logging.debug("Starting OmniGen pipeline")
         # check inputs:
         if use_input_image_size_as_output:
             assert isinstance(prompt, str) and len(input_images) == 1, "if you want to make sure the output image have the same size as the input image, please only input one image instead of multiple input images"
@@ -223,7 +221,7 @@ class OmniGenPipeline:
         else:
             self.disable_model_cpu_offload()
 
-        logger.debug("- Input data images")
+        logging.debug("- Input data images")
         input_data = self.processor(prompt, input_images, height=height, width=width, use_img_cfg=use_img_guidance, separate_cfg_input=separate_cfg_infer, use_input_image_size_as_output=use_input_image_size_as_output)
 
         num_prompt = len(prompt)
@@ -239,25 +237,25 @@ class OmniGenPipeline:
             generator = torch.Generator(device=self.device).manual_seed(seed)
         else:
             generator = None
-        logger.debug("- Create latents")
+        logging.debug("- Create latents")
         latents = torch.randn(num_prompt, 4, latent_size_h, latent_size_w, device=self.device, generator=generator)
         latents = torch.cat([latents]*(1+num_cfg), 0).to(dtype)
 
-        logger.debug("- VAE to device (BF16)")
+        logging.debug("- VAE to device (BF16)")
         self.vae.to(self.device, dtype=torch.bfloat16)
 
         input_img_latents = []
         if separate_cfg_infer:
-            logger.debug("- Encoding images separately")
+            logging.debug("- Encoding images separately")
             for temp_pixel_values in input_data['input_pixel_values']:
-                logger.debug("  - One image")
+                logging.debug("  - One image")
                 temp_input_latents = []
                 for img in temp_pixel_values:
                     img = self.vae_encode(img.to(self.device, dtype=torch.bfloat16), dtype)
                     temp_input_latents.append(img)
                 input_img_latents.append(temp_input_latents)
         else:
-            logger.debug("- Encoding all images at once")
+            logging.debug("- Encoding all images at once")
             for img in input_data['input_pixel_values']:
                 img = self.vae_encode(img.to(self.device), dtype)
                 input_img_latents.append(img)
@@ -275,7 +273,7 @@ class OmniGenPipeline:
             )
 
         # Unload the VAE to the RAM
-        logger.debug("- VAE to RAM and flush")
+        logging.debug("- VAE to RAM and flush")
         self.vae.to('cpu')
         torch.cuda.empty_cache()  # Clear VRAM
         gc.collect()  # Run garbage collection to free system RAM
@@ -286,7 +284,7 @@ class OmniGenPipeline:
             func = self.model.forward_with_cfg
 
         # Move main model to gpu
-        logger.debug("- Model to VRAM")
+        logging.debug("- Model to VRAM")
         self.model.to(self.device, dtype=dtype)
 
         if self.model_cpu_offload:
@@ -298,13 +296,13 @@ class OmniGenPipeline:
             for buffer_name, buffer in self.model.named_buffers():
                 setattr(self.model, buffer_name, buffer.to(self.device))
 
-        logger.debug("- Inference")
+        logging.debug("- Inference")
         scheduler = OmniGenScheduler(num_steps=num_inference_steps)
         samples = scheduler(latents, func, model_kwargs, use_kv_cache=use_kv_cache, offload_kv_cache=offload_kv_cache)
         samples = samples.chunk((1+num_cfg), dim=0)[0]
 
         if move_to_ram or self.model_cpu_offload:
-            logger.debug("- Model to CPU")
+            logging.debug("- Model to CPU")
             self.model.to('cpu')
 
         samples = samples.to(torch.float32)
@@ -313,30 +311,33 @@ class OmniGenPipeline:
         else:
             samples = samples / self.vae.config.scaling_factor
 
-        logger.debug("- Samples to VRAM")
+        logging.debug(samples)
+        logging.debug(type(samples))
+
+        logging.debug("- Samples to VRAM")
         # Move samples to GPU and ensure they are in bfloat16 (for the VAE)
         samples = samples.to(self.device, dtype=torch.bfloat16)
 
-        logger.debug("- VAE to VRAM (BF16)")
+        logging.debug("- VAE to VRAM (BF16)")
         # Load VAE into VRAM (GPU) in bfloat16
         self.vae.to(self.device, dtype=torch.bfloat16)
 
-        logger.debug("- VAE decode")
+        logging.debug("- VAE decode")
         # Decode the samples using the VAE
         samples = self.vae.decode(samples).sample
 
         if move_to_ram or self.model_cpu_offload:
-            logger.debug("- VAE to RAM")
+            logging.debug("- VAE to RAM")
             self.vae.to('cpu')
 
-        logger.debug("- Create image")
+        logging.debug("- Create image")
         output_samples = (samples * 0.5 + 0.5).clamp(0, 1)*255
         output_samples = output_samples.permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()
         output_images = []
         for i, sample in enumerate(output_samples):  
             output_images.append(Image.fromarray(sample))
 
-        logger.debug("- Flush")
+        logging.debug("- Flush")
         torch.cuda.empty_cache()  # Clear VRAM
         gc.collect()              # Run garbage collection to free system RAM
         return output_images
