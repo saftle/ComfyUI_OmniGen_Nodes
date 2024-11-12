@@ -5,14 +5,13 @@
 This node is an unofficial wrapper of the [OmniGen](https://github.com/VectorSpaceLab/OmniGen), running in ComfyUI.    
 The quantization code is referenced from [Manni1000/OmniGen](https://github.com/Manni1000/OmniGen).
 
-[中文说明点这里](./README_CN.md)
-
+This fork just adds better V/RAM handling.
 
 
 ### Install
 Open a terminal window in the ```ComfyUI/custom_nodes``` folder and enter the following command:
 ```
-git clone https://github.com/chflame163/ComfyUI_OmniGen_Wrapper.git
+git clone https://github.com/set-soft/ComfyUI_OmniGen_Wrapper.git
 ```
 
 ### Install dependencies
@@ -22,15 +21,21 @@ python -s -m pip install -r ComfyUI/custom_nodes/ComfyUI_OmniGen_Wrapper/require
 ```
 
 ### Download models
-When running the plugin for the first time, the model will be automatically downloaded. If the automatic download fails, you can manually download it. Choose one of the following two download methods:   
+When running the plugin for the first time, the model will be automatically downloaded. If the automatic download fails,
+you can manually download it.
 
-From Huggingface:
-* Download all files from [Shitao/OmniGen-v1](https://huggingface.co/Shitao/OmniGen-v1/tree/main) and copy to ```ComfyUI/models/OmniGen/Shitao/OmniGen-v1``` folder;    
-* Download ```diffusion_pytorch_model.safetensors``` and ```config.json```  from [stabilityai/sdxl-vae](https://huggingface.co/stabilityai/sdxl-vae/tree/main), copy the two files to ```ComfyUI/models/OmniGen/Shitao/OmniGen-v1/vae``` folder.    
+The files can be downloaded from [Shitao/OmniGen-v1](https://huggingface.co/Shitao/OmniGen-v1/tree/main) and copied to
+```ComfyUI/models/OmniGen/Shitao/OmniGen-v1``` folder.
 
-Or Download all files from BaiduNetdisk and copy to ```ComfyUI/models/OmniGen/Shitao/OmniGen-v1``` folder.
-* [BaiduNetdisk](https://pan.baidu.com/s/1uivyo_voaZ668nT3aMLw8Q?pwd=ma06)
+If you want to save disk space and/or download time use the FP8 quantized model downloading it from
+[silveroxides/OmniGen-V1](https://huggingface.co/silveroxides/OmniGen-V1/tree/main). Download all files except for
+`model.safetensors` (15.5 GB). Copy them to the ```ComfyUI/models/OmniGen/Shitao/OmniGen-v1``` folder.
+And finally rename `model-fp8_e4m3fn.safetensors` (3.88 GB) to `model.safetensors`. This will save 11.6 GB of download/disk.
 
+
+You might also experiment downloading ```diffusion_pytorch_model.safetensors``` and ```config.json```  from
+[stabilityai/sdxl-vae](https://huggingface.co/stabilityai/sdxl-vae/tree/main), copy the two files to
+```ComfyUI/models/OmniGen/Shitao/OmniGen-v1/vae``` folder.
 
 ### How to use
 Start ComfyUI, right click on screen to activate the menu, find ```Add Node``` - ```😺dzNodes``` - ```OmniGen Wrapper```, the node is here.    
@@ -55,11 +60,8 @@ Alternatively, enter OmniGen Wrapper in the node search bar to find the node.
 * use_kv_cache: Enable kv cache to speed up the inference
 * seed: A random seed for generating output.
 * control_after_generate: Seed value change option every time it runs.
-* cache_model: When set to True, the model is cached and does not need to be loaded again during the next run.
-
-### Star
-
-[![Star History Chart](https://api.star-history.com/svg?repos=chflame163/ComfyUI_OmniGen_Wrapper&type=Date)](https://star-history.com/#chflame163/ComfyUI_OmniGen_Wrapper&Date)
+* cache_model: When set to True, the model is cached and does not need to be loaded again during the next run. Strongly recommended for playing with this node.
+* move_to_ram: When set to True, keep in VRAM only the needed models. Moves to main RAM the rest. Use it if you experiments issues after inference when the VAE decodes the resulting image.
 
 ###  statement
 
