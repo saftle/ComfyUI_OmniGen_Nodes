@@ -77,7 +77,10 @@ class DZ_OmniGenV1:
                     "default": 0, "min": 0, "max": 1e18, "step": 1
                 }),
                 "cache_model": ("BOOLEAN", {
-                    "default": False, "tooltip": "Cache model in VRM to save loading time"
+                    "default": False, "tooltip": "Cache model in V/RAM to save loading time"
+                }),
+                "move_to_ram": ("BOOLEAN", {
+                    "default": False, "tooltip": "Keep in VRAM only the needed models. Move to main RAM the rest"
                 }),
             },
             "optional": {
@@ -93,7 +96,7 @@ class DZ_OmniGenV1:
     CATEGORY = '😺dzNodes/OmniGen Wrapper'
 
     def run_omnigen(self, dtype, prompt, width, height, guidance_scale, img_guidance_scale,
-                    steps, separate_cfg_infer, use_kv_cache, seed, cache_model,
+                    steps, separate_cfg_infer, use_kv_cache, seed, cache_model, move_to_ram,
                     image_1=None, image_2=None, image_3=None
                  ):
 
@@ -138,6 +141,7 @@ class DZ_OmniGenV1:
             separate_cfg_infer=separate_cfg_infer,  # set False can speed up the inference process
             use_kv_cache=use_kv_cache,
             seed=seed,
+            move_to_ram=move_to_ram,
         )
         ret_image = np.array(output[0]) / 255.0
         ret_image = torch.from_numpy(ret_image)
