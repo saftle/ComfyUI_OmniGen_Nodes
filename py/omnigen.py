@@ -50,6 +50,7 @@ class DZ_OmniGenV1:
                 "prompt": ("STRING", {
                     "default": "input image as {image_1}, e.g.", "multiline":True
                 }),
+                "vae": ("VAE",),
                 "width": ("INT", {
                     "default": 1024, "min": 16, "max": 2048, "step": 16
                 }),
@@ -90,13 +91,13 @@ class DZ_OmniGenV1:
             }
         }
 
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("image",)
+    RETURN_TYPES = ("LATENT",)
+    RETURN_NAMES = ("latent",)
     FUNCTION = "run_omnigen"
     CATEGORY = '😺dzNodes/OmniGen Wrapper'
 
     def run_omnigen(self, dtype, prompt, width, height, guidance_scale, img_guidance_scale,
-                    steps, separate_cfg_infer, use_kv_cache, seed, cache_model, move_to_ram,
+                    steps, separate_cfg_infer, use_kv_cache, seed, cache_model, move_to_ram, vae,
                     image_1=None, image_2=None, image_3=None
                  ):
 
@@ -143,8 +144,6 @@ class DZ_OmniGenV1:
             seed=seed,
             move_to_ram=move_to_ram,
         )
-        ret_image = np.array(output[0]) / 255.0
-        ret_image = torch.from_numpy(ret_image)
 
         if not cache_model:
             self.model = None
@@ -157,7 +156,7 @@ class DZ_OmniGenV1:
 
         shutil.rmtree(temp_dir)
 
-        return (ret_image.unsqueeze(0),)
+        return ({'samples': output}, )
 
 NODE_CLASS_MAPPINGS = {
     "dzOmniGenWrapper": DZ_OmniGenV1

@@ -40,6 +40,26 @@ EXAMPLE_DOC_STRING = """
         ```
 """
 
+def show_shape(te):
+    shapes = []
+    def tensorShape(tensor):
+        if isinstance(tensor, dict):
+            print('dict')
+            for k in tensor:
+                tensorShape(tensor[k])
+        elif isinstance(tensor, list):
+            print('list')
+            for i in range(len(tensor)):
+                tensorShape(tensor[i])
+        elif hasattr(tensor, 'shape'):
+            print('shape')
+            shapes.append(list(tensor.shape))
+
+    tensorShape(te)
+
+    print(f"\033[96mShapes found: {shapes}\033[0m")
+
+
 
 class OmniGenPipeline:
     def __init__(
@@ -313,31 +333,33 @@ class OmniGenPipeline:
 
         logging.debug(samples)
         logging.debug(type(samples))
-
-        logging.debug("- Samples to VRAM")
-        # Move samples to GPU and ensure they are in bfloat16 (for the VAE)
-        samples = samples.to(self.device, dtype=torch.bfloat16)
-
-        logging.debug("- VAE to VRAM (BF16)")
-        # Load VAE into VRAM (GPU) in bfloat16
-        self.vae.to(self.device, dtype=torch.bfloat16)
-
-        logging.debug("- VAE decode")
-        # Decode the samples using the VAE
-        samples = self.vae.decode(samples).sample
-
-        if move_to_ram or self.model_cpu_offload:
-            logging.debug("- VAE to RAM")
-            self.vae.to('cpu')
-
-        logging.debug("- Create image")
-        output_samples = (samples * 0.5 + 0.5).clamp(0, 1)*255
-        output_samples = output_samples.permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()
-        output_images = []
-        for i, sample in enumerate(output_samples):  
-            output_images.append(Image.fromarray(sample))
-
-        logging.debug("- Flush")
-        torch.cuda.empty_cache()  # Clear VRAM
-        gc.collect()              # Run garbage collection to free system RAM
-        return output_images
+        show_shape(samples)
+        return samples
+# Move decode outside this node
+#         logging.debug("- Samples to VRAM")
+#         # Move samples to GPU and ensure they are in bfloat16 (for the VAE)
+#         samples = samples.to(self.device, dtype=torch.bfloat16)
+# 
+#         logging.debug("- VAE to VRAM (BF16)")
+#         # Load VAE into VRAM (GPU) in bfloat16
+#         self.vae.to(self.device, dtype=torch.bfloat16)
+# 
+#         logging.debug("- VAE decode")
+#         # Decode the samples using the VAE
+#         samples = self.vae.decode(samples).sample
+# 
+#         if move_to_ram or self.model_cpu_offload:
+#             logging.debug("- VAE to RAM")
+#             self.vae.to('cpu')
+# 
+#         logging.debug("- Create image")
+#         output_samples = (samples * 0.5 + 0.5).clamp(0, 1)*255
+#         output_samples = output_samples.permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()
+#         output_images = []
+#         for i, sample in enumerate(output_samples):  
+#             output_images.append(Image.fromarray(sample))
+# 
+#         logging.debug("- Flush")
+#         torch.cuda.empty_cache()  # Clear VRAM
+#         gc.collect()              # Run garbage collection to free system RAM
+#         return output_images
