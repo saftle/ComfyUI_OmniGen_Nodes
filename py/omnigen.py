@@ -1,11 +1,9 @@
+import logging
 import os
 import sys
 sys.path.append(os.path.dirname(__file__))
 import torch
 import numpy as np
-import random
-import shutil
-import tempfile
 from PIL import Image
 from huggingface_hub import snapshot_download
 import folder_paths
@@ -14,17 +12,10 @@ from .OmniGen import OmniGenPipeline
 
 model_path = os.path.join(folder_paths.models_dir, "OmniGen", "Shitao", "OmniGen-v1")
 
+
 def tensor2pil(t_image: torch.Tensor)  -> Image:
     return Image.fromarray(np.clip(255.0 * t_image.cpu().numpy().squeeze(), 0, 255).astype(np.uint8))
 
-def generate_random_name(prefix:str, suffix:str, length:int) -> str:
-    name = ''.join(random.choice("abcdefghijklmnopqrstupvxyz1234567890") for x in range(length))
-    return prefix + name + suffix
-
-def save_tmp_image(image:Image, temp_dir:str) -> str:
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False, dir=temp_dir) as f:
-        image.save(f.name)
-    return f.name
 
 class OmniGen_Model:
     def __init__(self, quantization):
@@ -108,24 +99,15 @@ class DZ_OmniGenV1:
         if self.model is None or self.model.quantization != quantization:
             self.model = OmniGen_Model(quantization)
 
-        temp_dir = os.path.join(folder_paths.get_temp_directory(), generate_random_name('_ominigen_', '_temp', 16))
-        if os.path.isdir(temp_dir):
-            shutil.rmtree(temp_dir)
-        try:
-            os.makedirs(temp_dir)
-        except Exception as e:
-            print(f"Error: {self.NODE_NAME} skipped, because {e}", message_type='error')
-            return (None,)
-
         input_images = []
         if image_1 is not None:
-            input_images.append(save_tmp_image(tensor2pil(image_1), temp_dir))
+            input_images.append(tensor2pil(image_1))
             prompt = prompt.replace("{image_1}", "<img><|image_1|></img>")
         if image_2 is not None:
-            input_images.append(save_tmp_image(tensor2pil(image_2), temp_dir))
+            input_images.append(tensor2pil(image_2))
             prompt = prompt.replace("{image_2}", "<img><|image_2|></img>")
         if image_3 is not None:
-            input_images.append(save_tmp_image(tensor2pil(image_2), temp_dir))
+            input_images.append(tensor2pil(image_2))
             prompt = prompt.replace("{image_3}", "<img><|image_3|></img>")
         if len(input_images) == 0:
             input_images = None
@@ -153,8 +135,6 @@ class DZ_OmniGenV1:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 torch.cuda.ipc_collect()
-
-        shutil.rmtree(temp_dir)
 
         return ({'samples': output}, )
 
