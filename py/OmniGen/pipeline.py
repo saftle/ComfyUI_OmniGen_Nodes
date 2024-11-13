@@ -160,6 +160,7 @@ class OmniGenPipeline:
     def __call__(
         self,
         prompt: Union[str, List[str]],
+        negative_prompt: Union[str, List[str]] = None,
         input_images: Union[List[str], List[List[str]]] = None,
         height: int = 1024,
         width: int = 1024,
@@ -184,6 +185,8 @@ class OmniGenPipeline:
         Args:
             prompt (`str` or `List[str]`):
                 The prompt or prompts to guide the image generation. 
+            negative_prompt (`str` or `List[str]`):
+                The prompt or prompts to guide the image generation, but in the negative sense.
             input_images (`List[str]` or `List[List[str]]`, *optional*):
                 The list of input images. We will replace the "<|image_i|>" in prompt with the 1-th image in list.
             height (`int`, *optional*, defaults to 1024):
@@ -242,7 +245,8 @@ class OmniGenPipeline:
             self.disable_model_cpu_offload()
 
         logging.debug("- Input data images")
-        input_data = self.processor(prompt, input_images, height=height, width=width, use_img_cfg=use_img_guidance, separate_cfg_input=separate_cfg_infer, use_input_image_size_as_output=use_input_image_size_as_output)
+        input_data = self.processor(prompt, input_images, height=height, width=width, use_img_cfg=use_img_guidance, separate_cfg_input=separate_cfg_infer,
+                                    use_input_image_size_as_output=use_input_image_size_as_output, negative_prompt=negative_prompt)
 
         num_prompt = len(prompt)
         num_cfg = 2 if use_img_guidance else 1

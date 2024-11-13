@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 from typing import Dict, List
@@ -107,12 +108,17 @@ class OmniGenProcessor:
                 input_images: List[List[str]] = None,
                 height: int = 1024,
                 width: int = 1024,
-                negative_prompt: str = "low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers.",
+                negative_prompt: str = None,
                 use_img_cfg: bool = True,
                 separate_cfg_input: bool = False,
                 use_input_image_size_as_output: bool=False,
                 ) -> Dict:
 
+        if negative_prompt is None:
+            negative_prompt = ("low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, "
+                               "poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, "
+                               "bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, "
+                               "missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers.")
         if input_images is None:
             use_img_cfg = False
         if isinstance(instructions, str):
@@ -120,6 +126,12 @@ class OmniGenProcessor:
             input_images = [input_images]
         
         input_data = []
+        logging.info(f'instructions: {instructions}, len: {len(instructions)}')
+        logging.info('Negative prompt: '+negative_prompt)
+        if input_images:
+            logging.info(f'input_images: {input_images}, len: {len(input_images)}')
+        else:
+            logging.info('No images')
         for i in range(len(instructions)):
             cur_instruction = instructions[i]
             cur_input_images = None if input_images is None else input_images[i]

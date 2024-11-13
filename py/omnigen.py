@@ -10,6 +10,7 @@ import folder_paths
 
 from .OmniGen import OmniGenPipeline
 
+
 model_path = os.path.join(folder_paths.models_dir, "OmniGen", "Shitao", "OmniGen-v1")
 
 
@@ -39,14 +40,14 @@ class DZ_OmniGenV1:
             "required": {
                 "dtype": (dtype_list,),
                 "prompt": ("STRING", {
-                    "default": "input image as {image_1}, e.g.", "multiline":True
+                    "default": "input image as {image_1}, e.g.", "multiline":True, "defaultInput": True
                 }),
                 "vae": ("VAE",),
                 "width": ("INT", {
-                    "default": 1024, "min": 16, "max": 2048, "step": 16
+                    "default": 512, "min": 16, "max": 2048, "step": 16
                 }),
                 "height": ("INT", {
-                    "default": 1024, "min": 16, "max": 2048, "step": 16
+                    "default": 512, "min": 16, "max": 2048, "step": 16
                 }),
                 "guidance_scale": ("FLOAT", {
                     "default": 2.5, "min": 1.0, "max": 5.0, "step": 0.1
@@ -69,16 +70,17 @@ class DZ_OmniGenV1:
                     "default": 0, "min": 0, "max": 1e18, "step": 1
                 }),
                 "cache_model": ("BOOLEAN", {
-                    "default": False, "tooltip": "Cache model in V/RAM to save loading time"
+                    "default": True, "tooltip": "Cache model in V/RAM to save loading time"
                 }),
                 "move_to_ram": ("BOOLEAN", {
-                    "default": False, "tooltip": "Keep in VRAM only the needed models. Move to main RAM the rest"
+                    "default": True, "tooltip": "Keep in VRAM only the needed models. Move to main RAM the rest"
                 }),
             },
             "optional": {
                 "image_1": ("IMAGE",),
                 "image_2": ("IMAGE",),
-                "image_3": ("IMAGE",)
+                "image_3": ("IMAGE",),
+                "negative": ("STRING", {"default": "", "placeholder": "Negative", "multiline": True, "defaultInput": True}),
             }
         }
 
@@ -87,10 +89,13 @@ class DZ_OmniGenV1:
     FUNCTION = "run_omnigen"
     CATEGORY = '😺dzNodes/OmniGen Wrapper'
 
-    def run_omnigen(self, dtype, prompt, width, height, guidance_scale, img_guidance_scale,
-                    steps, separate_cfg_infer, use_kv_cache, seed, cache_model, move_to_ram, vae,
-                    image_1=None, image_2=None, image_3=None
+    def run_omnigen(self, dtype, prompt, vae, width, height, guidance_scale, img_guidance_scale,
+                    steps, separate_cfg_infer, use_kv_cache, seed, cache_model, move_to_ram,
+                    image_1=None, image_2=None, image_3=None, negative=None
                  ):
+
+        logging.debug(vae)
+        logging.debug(f'Negative: {negative}')
 
         if not os.path.exists(os.path.join(model_path, "model.safetensors")):
             snapshot_download("Shitao/OmniGen-v1",local_dir=model_path)
@@ -115,6 +120,7 @@ class DZ_OmniGenV1:
         # Generate image
         output = self.model.pipe(
             prompt=prompt,
+            negative_prompt=negative,
             input_images=input_images,
             height=height,
             width=width,
