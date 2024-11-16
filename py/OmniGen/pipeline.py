@@ -10,7 +10,6 @@ import numpy as np
 import torch
 from huggingface_hub import snapshot_download
 from peft import LoraConfig, PeftModel
-from diffusers.models import AutoencoderKL
 from diffusers.utils import (
     USE_PEFT_BACKEND,
     is_torch_xla_available,
@@ -64,12 +63,10 @@ def show_shape(te):
 class OmniGenPipeline:
     def __init__(
         self,
-        vae: AutoencoderKL,
         model: OmniGen,
         processor: OmniGenProcessor,
         device: Union[str, torch.device] = None,
     ):
-        self.vae = vae
         self.model = model
         self.processor = processor
         self.device = device
@@ -85,12 +82,11 @@ class OmniGenPipeline:
 
         self.model.to(torch.bfloat16)
         self.model.eval()
-        self.vae.eval()
 
         self.model_cpu_offload = False
 
     @classmethod
-    def from_pretrained(cls, model_name, vae_path: str=None, Quantization: bool=False):
+    def from_pretrained(cls, model_name, Quantization: bool=False):
         if not os.path.exists(model_name) or (not os.path.exists(os.path.join(model_name, 'model.safetensors')) and model_name == "Shitao/OmniGen-v1"):
             logging.info("Model not found, downloading...")
             cache_folder = os.getenv('HF_HUB_CACHE')
@@ -104,16 +100,7 @@ class OmniGenPipeline:
         logging.info(f"Loading OmniGen Processor")
         processor = OmniGenProcessor.from_pretrained(model_name)
 
-        logging.info(f"Loading OmniGen VAE")
-        if os.path.exists(os.path.join(model_name, "vae")):
-            vae = AutoencoderKL.from_pretrained(os.path.join(model_name, "vae"))
-        elif vae_path is not None:
-            vae = AutoencoderKL.from_pretrained(vae_path)
-        else:
-            logging.info(f"No VAE found in {model_name}, downloading stabilityai/sdxl-vae from HF")
-            vae = AutoencoderKL.from_pretrained("stabilityai/sdxl-vae")
-
-        return cls(vae, model, processor)
+        return cls(model, processor)
     
     def merge_lora(self, lora_path: str):
         model = PeftModel.from_pretrained(self.model, lora_path)
@@ -125,18 +112,12 @@ class OmniGenPipeline:
         if isinstance(device, str):
             device = torch.device(device)
         self.model.to(device)
-        self.vae.to(device)
         self.device = device
 
-    def vae_encode(self, x, dtype):
-        x = x.to(self.vae.config.get("dtype", torch.bfloat16))
-        if self.vae.config.shift_factor is not None:
-            x = self.vae.encode(x).latent_dist.sample()
-            x = (x - self.vae.config.shift_factor) * self.vae.config.scaling_factor
-        else:
-            x = self.vae.encode(x).latent_dist.sample().mul_(self.vae.config.scaling_factor)
-        x = x.to(dtype)
-        return x
+    def vae_encode(self, vae, img):
+        """ Encode the image and move it to the device and data type used by the model """
+        img = img.permute(0, 2, 3, 1) * 0.5 + 0.5
+        return vae.encode(img).mul_(0.13025).to(self.device, dtype=torch.bfloat16)
     
     def move_to_device(self, data):
         if isinstance(data, list):
@@ -146,14 +127,12 @@ class OmniGenPipeline:
     def enable_model_cpu_offload(self):
         self.model_cpu_offload = True
         self.model.to("cpu")
-        self.vae.to("cpu")
         torch.cuda.empty_cache()  # Clear VRAM
         gc.collect()  # Run garbage collection to free system RAM
     
     def disable_model_cpu_offload(self):
         self.model_cpu_offload = False
         self.model.to(self.device)
-        self.vae.to(self.device)
 
     @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
@@ -267,9 +246,6 @@ class OmniGenPipeline:
         latents = torch.randn(num_prompt, 4, latent_size_h, latent_size_w, device=self.device, generator=generator)
         latents = torch.cat([latents]*(1+num_cfg), 0).to(dtype)
 
-        logging.debug("- VAE to device (BF16)")
-        self.vae.to(self.device, dtype=torch.bfloat16)
-
         input_img_latents = []
         if separate_cfg_infer:
             logging.debug("- Encoding images separately")
@@ -277,30 +253,12 @@ class OmniGenPipeline:
                 logging.debug("  - One image")
                 temp_input_latents = []
                 for img in temp_pixel_values:
-                    logging.debug(f'Before VAE: {img.shape}\n{img}')
-                    if False:
-                        # Original code using loaded VAE
-                        img = self.vae_encode(img.to(self.device, dtype=torch.bfloat16), dtype)
-                    else:
-                        img = img.permute(0, 2, 3, 1) * 0.5 + 0.5
-                        logging.debug(f'- Middle: {img.shape}\n{img}')
-                        img = vae.encode(img).mul_(0.13025).to(self.device, dtype=torch.bfloat16)
-                    logging.debug(f'After VAE: {img.shape}\n{img}')
-                    temp_input_latents.append(img)
+                    temp_input_latents.append(self.vae_encode(vae, img))
                 input_img_latents.append(temp_input_latents)
         else:
             logging.debug("- Encoding all images at once")
             for img in input_data['input_pixel_values']:
-                logging.debug(f'Before VAE: {img.shape}\n{img}')
-                if False:
-                    # Original code using loaded VAE
-                    img = self.vae_encode(img.to(self.device), dtype)
-                else:
-                    img = img.permute(0, 2, 3, 1) * 0.5 + 0.5
-                    logging.debug(f'- Middle: {img.shape}\n{img}')
-                    img = vae.encode(img).mul_(0.13025).to(self.device, dtype=torch.bfloat16)
-                logging.debug(f'After VAE: {img.shape} {img}')
-                input_img_latents.append(img)
+                input_img_latents.append(self.vae_encode(vae, img))
 
         model_kwargs = dict(input_ids=self.move_to_device(input_data['input_ids']), 
             input_img_latents=input_img_latents, 
@@ -314,9 +272,6 @@ class OmniGenPipeline:
             offload_model=offload_model,
             )
 
-        # Unload the VAE to the RAM
-        logging.debug("- VAE to RAM and flush")
-        self.vae.to('cpu')
         torch.cuda.empty_cache()  # Clear VRAM
         gc.collect()  # Run garbage collection to free system RAM
         
@@ -348,10 +303,7 @@ class OmniGenPipeline:
             self.model.to('cpu')
 
         samples = samples.to(torch.float32)
-        if self.vae.config.shift_factor is not None:
-            samples = samples / self.vae.config.scaling_factor + self.vae.config.shift_factor
-        else:
-            samples = samples / self.vae.config.scaling_factor
+        samples = samples / 0.13025
 
         # logging.debug(samples)
         # logging.debug(type(samples))
