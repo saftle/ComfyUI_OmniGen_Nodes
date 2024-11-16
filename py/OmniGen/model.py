@@ -14,6 +14,8 @@ from huggingface_hub import snapshot_download
 from safetensors.torch import load_file
 
 from OmniGen.transformer import Phi3Config, Phi3Transformer
+# Only for debug, used to skip the model load, makes a fast start-up
+DISABLE_MODEL = False
 
 
 def modulate(x, shift, scale):
@@ -233,6 +235,8 @@ class OmniGen(nn.Module, PeftAdapterMixin):
 
     @classmethod
     def from_pretrained(cls, model_name, quantize=False):
+        if DISABLE_MODEL:
+            return None
         if not os.path.exists(model_name):
             cache_folder = os.getenv('HF_HUB_CACHE')
             model_name = snapshot_download(repo_id=model_name,

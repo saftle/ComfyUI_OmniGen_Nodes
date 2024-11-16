@@ -61,8 +61,12 @@ class OmniGenPipeline:
                 logging.info("Don't detect any available GPUs, using CPU instead, this may take long time to generate image!!!")
                 self.device = torch.device("cpu")
 
-        self.model.to(torch.bfloat16)
-        self.model.eval()
+        if self.model:
+            logging.info('To BF16')
+            self.model.to(torch.bfloat16)
+            logging.info('Eval')
+            self.model.eval()
+            logging.info('End of eval')
 
         self.model_cpu_offload = False
 
@@ -113,7 +117,8 @@ class OmniGenPipeline:
     
     def disable_model_cpu_offload(self):
         self.model_cpu_offload = False
-        self.model.to(self.device)
+        if self.model:
+            self.model.to(self.device)
 
     @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
@@ -243,6 +248,8 @@ class OmniGenPipeline:
             logging.info("- Encoding all images at once")
             for img in input_data['input_pixel_values']:
                 input_img_latents.append(self.vae_encode(vae, img))
+        # Stop here if we are skipping the model load
+        assert self.model is not None, "Stopped because we didn't load the model"
 
         model_kwargs = dict(input_ids=self.move_to_device(input_data['input_ids']), 
             input_img_latents=input_img_latents, 
