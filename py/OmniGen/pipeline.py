@@ -178,6 +178,7 @@ class OmniGenPipeline:
         seed: int = None,
         Quantization: bool = False,
         move_to_ram: bool = False,
+        vae = None,
         ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -219,6 +220,7 @@ class OmniGenPipeline:
             move_to_ram (`bool`, *optional*, defaults to False):
                 Keep in VRAM only the needed models, otherwise move them to RAM.
                 Use it if you see allocation problems.
+            vae: Comfy_UI VAE object
         Examples:
 
         Returns:
@@ -275,13 +277,29 @@ class OmniGenPipeline:
                 logging.debug("  - One image")
                 temp_input_latents = []
                 for img in temp_pixel_values:
-                    img = self.vae_encode(img.to(self.device, dtype=torch.bfloat16), dtype)
+                    logging.debug(f'Before VAE: {img.shape}\n{img}')
+                    if False:
+                        # Original code using loaded VAE
+                        img = self.vae_encode(img.to(self.device, dtype=torch.bfloat16), dtype)
+                    else:
+                        img = img.permute(0, 2, 3, 1) * 0.5 + 0.5
+                        logging.debug(f'- Middle: {img.shape}\n{img}')
+                        img = vae.encode(img).mul_(0.13025).to(self.device, dtype=torch.bfloat16)
+                    logging.debug(f'After VAE: {img.shape}\n{img}')
                     temp_input_latents.append(img)
                 input_img_latents.append(temp_input_latents)
         else:
             logging.debug("- Encoding all images at once")
             for img in input_data['input_pixel_values']:
-                img = self.vae_encode(img.to(self.device), dtype)
+                logging.debug(f'Before VAE: {img.shape}\n{img}')
+                if False:
+                    # Original code using loaded VAE
+                    img = self.vae_encode(img.to(self.device), dtype)
+                else:
+                    img = img.permute(0, 2, 3, 1) * 0.5 + 0.5
+                    logging.debug(f'- Middle: {img.shape}\n{img}')
+                    img = vae.encode(img).mul_(0.13025).to(self.device, dtype=torch.bfloat16)
+                logging.debug(f'After VAE: {img.shape} {img}')
                 input_img_latents.append(img)
 
         model_kwargs = dict(input_ids=self.move_to_device(input_data['input_ids']), 

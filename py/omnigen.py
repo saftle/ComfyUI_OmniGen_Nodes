@@ -173,6 +173,7 @@ class DZ_OmniGenV1:
             seed=seed,
             move_to_ram=move_to_ram,
             max_input_image_size=max_input_image_size,
+            vae = vae,
         )
 
         if not cache_model:
