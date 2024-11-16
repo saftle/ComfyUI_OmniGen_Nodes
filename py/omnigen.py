@@ -154,7 +154,7 @@ class DZ_OmniGenV1:
         if not os.path.exists(os.path.join(model_path, "model.safetensors")):
             snapshot_download("Shitao/OmniGen-v1",local_dir=model_path)
 
-        quantization = True if type == "int8" else False
+        quantization = True if dtype == "int8" else False
         if self.model is None or self.model.quantization != quantization:
             self.model = OmniGen_Model(quantization)
 

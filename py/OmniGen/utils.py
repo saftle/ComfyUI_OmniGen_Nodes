@@ -130,3 +130,11 @@ def show_shape(te):
     tensorShape(te)
 
     return f"\033[96mShapes found ({kind}): {shapes}\033[0m"
+
+
+def show_mem():
+    device = torch.device('cuda:0')
+    free, total = torch.cuda.mem_get_info(device)
+    free = round(free/(1024*1024))
+    total = round(total/(1024*1024))
+    logging.info(f"Memory: {total-free}/{total} MiB free: {free} MiB")

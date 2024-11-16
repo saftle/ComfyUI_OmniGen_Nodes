@@ -20,6 +20,7 @@ from diffusers.utils import (
 from safetensors.torch import load_file
 
 from OmniGen import OmniGen, OmniGenProcessor, OmniGenScheduler
+from OmniGen.utils import show_mem, show_shape
 
 
 EXAMPLE_DOC_STRING = """
@@ -38,26 +39,6 @@ EXAMPLE_DOC_STRING = """
         >>> image.save("t2i.png")
         ```
 """
-
-def show_shape(te):
-    shapes = []
-    def tensorShape(tensor):
-        if isinstance(tensor, dict):
-            print('dict')
-            for k in tensor:
-                tensorShape(tensor[k])
-        elif isinstance(tensor, list):
-            print('list')
-            for i in range(len(tensor)):
-                tensorShape(tensor[i])
-        elif hasattr(tensor, 'shape'):
-            print('shape')
-            shapes.append(list(tensor.shape))
-
-    tensorShape(te)
-
-    print(f"\033[96mShapes found: {shapes}\033[0m")
-
 
 
 class OmniGenPipeline:
@@ -206,6 +187,7 @@ class OmniGenPipeline:
             A list with the generated images.
         """
         logging.debug("Starting OmniGen pipeline")
+        show_mem()
         # check inputs:
         if use_input_image_size_as_output:
             assert isinstance(prompt, str) and len(input_images) == 1, "if you want to make sure the output image have the same size as the input image, please only input one image instead of multiple input images"
@@ -226,6 +208,7 @@ class OmniGenPipeline:
             self.disable_model_cpu_offload()
 
         logging.debug("- Input data images")
+        show_mem()
         input_data = self.processor(prompt, input_images, height=height, width=width, use_img_cfg=use_img_guidance, separate_cfg_input=separate_cfg_infer,
                                     use_input_image_size_as_output=use_input_image_size_as_output, negative_prompt=negative_prompt)
 
@@ -243,6 +226,7 @@ class OmniGenPipeline:
         else:
             generator = None
         logging.debug("- Create latents")
+        show_mem()
         latents = torch.randn(num_prompt, 4, latent_size_h, latent_size_w, device=self.device, generator=generator)
         latents = torch.cat([latents]*(1+num_cfg), 0).to(dtype)
 
@@ -272,8 +256,10 @@ class OmniGenPipeline:
             offload_model=offload_model,
             )
 
+        show_mem()
         torch.cuda.empty_cache()  # Clear VRAM
         gc.collect()  # Run garbage collection to free system RAM
+        show_mem()
         
         if separate_cfg_infer:
             func = self.model.forward_with_separate_cfg
@@ -283,6 +269,7 @@ class OmniGenPipeline:
         # Move main model to gpu
         logging.debug("- Model to VRAM")
         self.model.to(self.device, dtype=dtype)
+        show_mem()
 
         if self.model_cpu_offload:
             for name, param in self.model.named_parameters():
@@ -298,9 +285,11 @@ class OmniGenPipeline:
         samples = scheduler(latents, func, model_kwargs, use_kv_cache=use_kv_cache, offload_kv_cache=offload_kv_cache)
         samples = samples.chunk((1+num_cfg), dim=0)[0]
 
+        show_mem()
         if move_to_ram or self.model_cpu_offload:
             logging.debug("- Model to CPU")
             self.model.to('cpu')
+        show_mem()
 
         samples = samples.to(torch.float32)
         samples = samples / 0.13025
