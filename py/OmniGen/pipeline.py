@@ -186,7 +186,7 @@ class OmniGenPipeline:
         Returns:
             A list with the generated images.
         """
-        logging.debug("Starting OmniGen pipeline")
+        logging.info("Starting OmniGen pipeline")
         show_mem()
         # check inputs:
         if use_input_image_size_as_output:
@@ -207,7 +207,7 @@ class OmniGenPipeline:
         else:
             self.disable_model_cpu_offload()
 
-        logging.debug("- Input data images")
+        logging.info("- Input data images")
         show_mem()
         input_data = self.processor(prompt, input_images, height=height, width=width, use_img_cfg=use_img_guidance, separate_cfg_input=separate_cfg_infer,
                                     use_input_image_size_as_output=use_input_image_size_as_output, negative_prompt=negative_prompt)
@@ -225,22 +225,22 @@ class OmniGenPipeline:
             generator = torch.Generator(device=self.device).manual_seed(seed)
         else:
             generator = None
-        logging.debug("- Create latents")
+        logging.info("- Create latents")
         show_mem()
         latents = torch.randn(num_prompt, 4, latent_size_h, latent_size_w, device=self.device, generator=generator)
         latents = torch.cat([latents]*(1+num_cfg), 0).to(dtype)
 
         input_img_latents = []
         if separate_cfg_infer:
-            logging.debug("- Encoding images separately")
+            logging.info("- Encoding images separately")
             for temp_pixel_values in input_data['input_pixel_values']:
-                logging.debug("  - One image")
+                logging.info("  - One image")
                 temp_input_latents = []
                 for img in temp_pixel_values:
                     temp_input_latents.append(self.vae_encode(vae, img))
                 input_img_latents.append(temp_input_latents)
         else:
-            logging.debug("- Encoding all images at once")
+            logging.info("- Encoding all images at once")
             for img in input_data['input_pixel_values']:
                 input_img_latents.append(self.vae_encode(vae, img))
 
@@ -267,7 +267,7 @@ class OmniGenPipeline:
             func = self.model.forward_with_cfg
 
         # Move main model to gpu
-        logging.debug("- Model to VRAM")
+        logging.info("- Model to VRAM")
         self.model.to(self.device, dtype=dtype)
         show_mem()
 
@@ -280,14 +280,14 @@ class OmniGenPipeline:
             for buffer_name, buffer in self.model.named_buffers():
                 setattr(self.model, buffer_name, buffer.to(self.device))
 
-        logging.debug("- Inference")
+        logging.info("- Inference")
         scheduler = OmniGenScheduler(num_steps=num_inference_steps)
         samples = scheduler(latents, func, model_kwargs, use_kv_cache=use_kv_cache, offload_kv_cache=offload_kv_cache)
         samples = samples.chunk((1+num_cfg), dim=0)[0]
 
         show_mem()
         if move_to_ram or self.model_cpu_offload:
-            logging.debug("- Model to CPU")
+            logging.info("- Model to CPU")
             self.model.to('cpu')
         show_mem()
 

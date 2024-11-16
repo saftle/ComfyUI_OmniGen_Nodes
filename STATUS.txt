@@ -1,0 +1,9 @@
+Working.
+- The cup change to coke and earrings removal is done well in 5 steps @ 1024x1024
+- Use separate_cfg_infer = True and dtype int8 for mid VRAM
+- Entering inference with 5907 MiB allocated, leaving with 6198 MiB
+- Peak: unkwnon? Might be more than 8 GiB, not sure
+- First run 111.54
+- Second  74 s @ 14 s/it
+
+

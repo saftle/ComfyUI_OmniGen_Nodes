@@ -127,9 +127,6 @@ class DZ_OmniGenV1:
                     image_1=None, image_2=None, image_3=None, negative=None
                  ):
 
-        logging.debug(vae)
-        logging.debug(f'Negative: {negative}')
-
         input_images = []
         if image_1 is not None:
             crp_img_1, prompt = validate_image(1, image_1, prompt, max_input_image_size)
