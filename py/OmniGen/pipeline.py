@@ -3,6 +3,7 @@ import os
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Union
 import gc
+import pprint
 import time
 
 from PIL import Image
@@ -217,6 +218,17 @@ class OmniGenPipeline:
         input_data = self.processor(prompt, input_images, height=height, width=width, use_img_cfg=use_img_guidance, separate_cfg_input=separate_cfg_infer,
                                     use_input_image_size_as_output=use_input_image_size_as_output, negative_prompt=negative_prompt)
 
+        logging.debug('Processor output:')
+        logging.debug(f'input_ids: {show_shape(input_data["input_ids"])}')
+        # logging.debug(f'attention_mask {input_data["attention_mask"]}')
+        # logging.debug(f'position_ids: {input_data["position_ids"]}')
+        logging.debug(f'input_pixel_values: {show_shape(input_data["input_pixel_values"])}')
+        logging.debug(f'input_image_sizes: {show_shape(input_data["input_image_sizes"])}')
+        # logging.debug(f'padding_images: {input_data["padding_images"]}')
+        logging.debug('---------------------------------------------------')
+        logging.debug(pprint.pformat(input_data))
+        logging.info('---------------------------------------------------')
+
         num_prompt = len(prompt)
         num_cfg = 2 if use_img_guidance else 1
         if use_input_image_size_as_output:
@@ -239,9 +251,10 @@ class OmniGenPipeline:
         if separate_cfg_infer:
             logging.info("- Encoding images separately")
             for temp_pixel_values in input_data['input_pixel_values']:
-                logging.info("  - One image")
+                logging.info("  - One conditional")
                 temp_input_latents = []
                 for img in temp_pixel_values:
+                    logging.info(show_shape(img))
                     temp_input_latents.append(self.vae_encode(vae, img))
                 input_img_latents.append(temp_input_latents)
         else:
