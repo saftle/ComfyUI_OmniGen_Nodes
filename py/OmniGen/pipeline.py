@@ -293,36 +293,4 @@ class OmniGenPipeline:
 
         samples = samples.to(torch.float32)
         samples = samples / 0.13025
-
-        # logging.debug(samples)
-        # logging.debug(type(samples))
-        # show_shape(samples)
         return samples
-# Move decode outside this node
-#         logging.debug("- Samples to VRAM")
-#         # Move samples to GPU and ensure they are in bfloat16 (for the VAE)
-#         samples = samples.to(self.device, dtype=torch.bfloat16)
-# 
-#         logging.debug("- VAE to VRAM (BF16)")
-#         # Load VAE into VRAM (GPU) in bfloat16
-#         self.vae.to(self.device, dtype=torch.bfloat16)
-# 
-#         logging.debug("- VAE decode")
-#         # Decode the samples using the VAE
-#         samples = self.vae.decode(samples).sample
-# 
-#         if move_to_ram or self.model_cpu_offload:
-#             logging.debug("- VAE to RAM")
-#             self.vae.to('cpu')
-# 
-#         logging.debug("- Create image")
-#         output_samples = (samples * 0.5 + 0.5).clamp(0, 1)*255
-#         output_samples = output_samples.permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()
-#         output_images = []
-#         for i, sample in enumerate(output_samples):  
-#             output_images.append(Image.fromarray(sample))
-# 
-#         logging.debug("- Flush")
-#         torch.cuda.empty_cache()  # Clear VRAM
-#         gc.collect()              # Run garbage collection to free system RAM
-#         return output_images
