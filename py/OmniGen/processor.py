@@ -19,6 +19,7 @@ from OmniGen.utils import (
     center_crop_arr,
     crop_arr,
     show_shape,
+    NEGATIVE_PROMPT,
 )
 
 
@@ -105,10 +106,7 @@ class OmniGenProcessor:
                 ) -> Dict:
 
         if negative_prompt is None:
-            negative_prompt = ("low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, "
-                               "poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, "
-                               "bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, "
-                               "missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers.")
+            negative_prompt = NEGATIVE_PROMPT
         if input_images is None:
             use_img_cfg = False
         if isinstance(instructions, str):

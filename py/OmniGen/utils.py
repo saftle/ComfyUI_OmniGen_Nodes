@@ -3,6 +3,12 @@ import logging
 from PIL import Image
 import torch
 import numpy as np
+# This is the default negative prompt
+NEGATIVE_PROMPT = ("low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, "
+                   "poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, "
+                   "bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, "
+                   "missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers.")
+
 
 def create_logger(logging_dir):
     """

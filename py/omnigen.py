@@ -10,7 +10,7 @@ from torchvision import transforms
 
 sys.path.append(os.path.dirname(__file__))
 from .OmniGen import OmniGenPipeline
-from .OmniGen.utils import show_shape, crop_arr
+from .OmniGen.utils import show_shape, crop_arr, NEGATIVE_PROMPT
 
 model_path = os.path.join(folder_paths.models_dir, "OmniGen", "Shitao", "OmniGen-v1")
 r1 = [[0, 1], [1, 0]]
@@ -120,7 +120,7 @@ class DZ_OmniGenV1:
     RETURN_TYPES = ("LATENT","IMAGE","IMAGE","IMAGE",)
     RETURN_NAMES = ("latent", "crp_img_1", "crp_img_2", "crp_img_3")
     FUNCTION = "run_omnigen"
-    CATEGORY = '😺dzNodes/OmniGen Wrapper'
+    CATEGORY = 'OmniGen'
 
     def run_omnigen(self, dtype, prompt, vae, width, height, guidance_scale, img_guidance_scale,
                     steps, separate_cfg_infer, use_kv_cache, seed, cache_model, move_to_ram, max_input_image_size,
@@ -185,10 +185,71 @@ class DZ_OmniGenV1:
         return ({'samples': output}, crp_img_1, crp_img_2, crp_img_3,)
 
 
+class OmniGenConditioner:
+    def __init__(self):
+        self.NODE_NAME = "OmniGen Conditioner"
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "prompt": ("STRING", {
+                    "default": "input image as {image_1}, e.g.", "multiline":True, "defaultInput": True
+                }),
+                "max_input_image_size": ("INT", {
+                    "default": 1024, "min": 256, "max": 2048, "step": 16
+                }),
+            },
+            "optional": {
+                "image_1": ("IMAGE",),
+                "image_2": ("IMAGE",),
+                "image_3": ("IMAGE",),
+                "negative": ("STRING", {"default": "", "placeholder": "Negative", "multiline": True, "defaultInput": True}),
+            }
+        }
+
+    RETURN_TYPES = ("OMNI_COND", "IMAGE", "IMAGE", "IMAGE")
+    RETURN_NAMES = ("conditioner", "crp_img_1", "crp_img_2", "crp_img_3")
+    FUNCTION = "run"
+    CATEGORY = 'OmniGen'
+
+    def run(self, prompt, max_input_image_size, image_1=None, image_2=None, image_3=None, negative=None):
+
+        input_images = []
+        if image_1 is not None:
+            crp_img_1, prompt = validate_image(1, image_1, prompt, max_input_image_size)
+            input_images.append(crp_img_1)
+        else:
+            crp_img_1 = EMPTY_IMG
+        if image_2 is not None:
+            assert image_1 is not None, "Don't use image slot 2 if slot 1 is empty"
+            crp_img_2, prompt = validate_image(2, image_2, prompt, max_input_image_size)
+            input_images.append(crp_img_2)
+        else:
+            crp_img_2 = EMPTY_IMG
+        if image_3 is not None:
+            assert image_2 is not None, "Don't use image slot 3 if slot 2 is empty"
+            crp_img_3, prompt = validate_image(3, image_3, prompt, max_input_image_size)
+            input_images.append(crp_img_3)
+        else:
+            crp_img_3 = EMPTY_IMG
+        if len(input_images) == 0:
+            input_images = None
+
+        if negative is None:
+            negative = NEGATIVE_PROMPT
+
+        return ({'positive': prompt, 'negative': negative, 'images': input_images}, crp_img_1, crp_img_2, crp_img_3,)
+
+
 NODE_CLASS_MAPPINGS = {
-    "dzOmniGenWrapper": DZ_OmniGenV1
+    "dzOmniGenWrapper": DZ_OmniGenV1,
+    "setOmniGenConditioner": OmniGenConditioner,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "dzOmniGenWrapper": "😺dz: OmniGen Wrapper"
+    "dzOmniGenWrapper": "😺dz: OmniGen Wrapper",
+    "setOmniGenConditioner": "OmniGen Conditioner (set)",
 }
+
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
