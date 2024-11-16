@@ -1,17 +1,22 @@
-import logging
-import os
-import sys
-sys.path.append(os.path.dirname(__file__))
-import torch
-import numpy as np
-from PIL import Image
-from huggingface_hub import snapshot_download
 import folder_paths
+from huggingface_hub import snapshot_download
+import logging
+import numpy as np
+import os
+from PIL import Image
+import sys
+import torch
+from torchvision import transforms
 
+sys.path.append(os.path.dirname(__file__))
 from .OmniGen import OmniGenPipeline
-
+from .OmniGen.utils import show_shape, crop_arr
 
 model_path = os.path.join(folder_paths.models_dir, "OmniGen", "Shitao", "OmniGen-v1")
+r1 = [[0, 1], [1, 0]]
+g1 = [[1, 0], [0, 1]]
+b1 = [[1, 1], [0, 0]]
+EMPTY_IMG = torch.tensor([r1, g1, b1]).unsqueeze(0)
 
 
 def tensor2pil(t_image: torch.Tensor)  -> Image:
@@ -25,6 +30,31 @@ class OmniGen_Model:
                     model_path,
                     Quantization=quantization
                 )
+
+
+def validate_image(idx, image, prompt, max_input_image_size):
+    """ Ensure is used in the prompt, replace by the real marker and resize to a multiple of 16 """
+    # Replace {image_N}, optionaly image_N, stop if not in prompt
+    img_txt = f"image_{idx}"
+    img_txt_curly = "{"+img_txt+"}"
+    img_marker = f"<img><|image_{idx}|></img>"
+    if img_txt_curly in prompt:
+        prompt = prompt.replace(img_txt_curly, img_marker)
+    else:
+        assert img_txt in prompt, f"Image slot {idx} used, but the image isn't mentioned in the prompt"
+        prompt = prompt.replace(img_txt, img_marker)
+    # Make the image size usable [B,H,W,C]
+    w = image.size(-2)
+    h = image.size(-3)
+    if w<128 or h<128 or w>max_input_image_size or h>max_input_image_size or w%16 or h%16:
+        # Ok, the image needs size adjust
+        img = tensor2pil(image)
+        img = crop_arr(img, max_input_image_size)
+        to_tens = transforms.ToTensor()  # [C,H,W]
+        image = to_tens(img).unsqueeze(0).movedim(1, -1)
+        logging.info(f"Rescaling image {idx} from {w}x{h} to {image.size(-2)}x{image.size(-3)}")
+        logging.debug(image.shape)
+    return image, prompt
 
 
 class DZ_OmniGenV1:
@@ -75,6 +105,9 @@ class DZ_OmniGenV1:
                 "move_to_ram": ("BOOLEAN", {
                     "default": True, "tooltip": "Keep in VRAM only the needed models. Move to main RAM the rest"
                 }),
+                "max_input_image_size": ("INT", {
+                    "default": 1024, "min": 256, "max": 2048, "step": 16
+                }),
             },
             "optional": {
                 "image_1": ("IMAGE",),
@@ -84,38 +117,46 @@ class DZ_OmniGenV1:
             }
         }
 
-    RETURN_TYPES = ("LATENT",)
-    RETURN_NAMES = ("latent",)
+    RETURN_TYPES = ("LATENT","IMAGE","IMAGE","IMAGE",)
+    RETURN_NAMES = ("latent", "crp_img_1", "crp_img_2", "crp_img_3")
     FUNCTION = "run_omnigen"
     CATEGORY = '😺dzNodes/OmniGen Wrapper'
 
     def run_omnigen(self, dtype, prompt, vae, width, height, guidance_scale, img_guidance_scale,
-                    steps, separate_cfg_infer, use_kv_cache, seed, cache_model, move_to_ram,
+                    steps, separate_cfg_infer, use_kv_cache, seed, cache_model, move_to_ram, max_input_image_size,
                     image_1=None, image_2=None, image_3=None, negative=None
                  ):
 
         logging.debug(vae)
         logging.debug(f'Negative: {negative}')
 
+        input_images = []
+        if image_1 is not None:
+            crp_img_1, prompt = validate_image(1, image_1, prompt, max_input_image_size)
+            input_images.append(crp_img_1)
+        else:
+            crp_img_1 = EMPTY_IMG
+        if image_2 is not None:
+            assert image_1 is not None, "Don't use image slot 2 if slot 1 is empty"
+            crp_img_2, prompt = validate_image(2, image_2, prompt, max_input_image_size)
+            input_images.append(crp_img_2)
+        else:
+            crp_img_2 = EMPTY_IMG
+        if image_3 is not None:
+            assert image_2 is not None, "Don't use image slot 3 if slot 2 is empty"
+            crp_img_3, prompt = validate_image(3, image_3, prompt, max_input_image_size)
+            input_images.append(crp_img_3)
+        else:
+            crp_img_3 = EMPTY_IMG
+        if len(input_images) == 0:
+            input_images = None
+
         if not os.path.exists(os.path.join(model_path, "model.safetensors")):
             snapshot_download("Shitao/OmniGen-v1",local_dir=model_path)
 
-        quantization = True if dtype == "int8" else False
+        quantization = True if type == "int8" else False
         if self.model is None or self.model.quantization != quantization:
             self.model = OmniGen_Model(quantization)
-
-        input_images = []
-        if image_1 is not None:
-            input_images.append(tensor2pil(image_1))
-            prompt = prompt.replace("{image_1}", "<img><|image_1|></img>")
-        if image_2 is not None:
-            input_images.append(tensor2pil(image_2))
-            prompt = prompt.replace("{image_2}", "<img><|image_2|></img>")
-        if image_3 is not None:
-            input_images.append(tensor2pil(image_2))
-            prompt = prompt.replace("{image_3}", "<img><|image_3|></img>")
-        if len(input_images) == 0:
-            input_images = None
 
         # Generate image
         output = self.model.pipe(
@@ -131,6 +172,7 @@ class DZ_OmniGenV1:
             use_kv_cache=use_kv_cache,
             seed=seed,
             move_to_ram=move_to_ram,
+            max_input_image_size=max_input_image_size,
         )
 
         if not cache_model:
@@ -142,7 +184,8 @@ class DZ_OmniGenV1:
                 torch.cuda.empty_cache()
                 torch.cuda.ipc_collect()
 
-        return ({'samples': output}, )
+        return ({'samples': output}, crp_img_1, crp_img_2, crp_img_3,)
+
 
 NODE_CLASS_MAPPINGS = {
     "dzOmniGenWrapper": DZ_OmniGenV1

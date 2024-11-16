@@ -29,13 +29,6 @@ class OmniGenProcessor:
                 max_image_size: int=1024):
         self.text_tokenizer = text_tokenizer
         self.max_image_size = max_image_size
-
-        self.image_transform = transforms.Compose([
-            transforms.Lambda(lambda pil_image: crop_arr(pil_image, max_image_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
-        ])
-
         self.collator = OmniGenCollator()
         self.separate_collator = OmniGenSeparateCollator()
 
@@ -50,12 +43,10 @@ class OmniGenProcessor:
 
         return cls(text_tokenizer)
 
-
     def process_image(self, image):
-        if not isinstance(image, Image.Image):
-            # If you got a string load the image
-            image = Image.open(image).convert('RGB')
-        return self.image_transform(image)
+        """ Remove batch dimension, change from [W,H,C] to [C,W,H] and from [0,1] to [-1,1]
+            All of this is how the VAE will accept """
+        return image.squeeze(0).movedim(-1, 0) * 2.0 - 1.0
     
     def process_multi_modal_prompt(self, text, input_images):
         text = self.add_prefix_instruction(text)

@@ -108,3 +108,25 @@ def vae_encode_list(vae, x, weight_dtype):
         latents.append(img)
     return latents
 
+
+def show_shape(te):
+    shapes = []
+    kind = ''
+
+    def tensorShape(tensor):
+        nonlocal kind
+        if isinstance(tensor, dict):
+            kind += 'dict,'
+            for k in tensor:
+                tensorShape(tensor[k])
+        elif isinstance(tensor, list):
+            kind += 'list,'
+            for i in range(len(tensor)):
+                tensorShape(tensor[i])
+        elif hasattr(tensor, 'shape'):
+            kind += 'shape,'
+            shapes.append(list(tensor.shape))
+
+    tensorShape(te)
+
+    return f"\033[96mShapes found ({kind}): {shapes}\033[0m"

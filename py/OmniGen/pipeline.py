@@ -335,9 +335,9 @@ class OmniGenPipeline:
         else:
             samples = samples / self.vae.config.scaling_factor
 
-        logging.debug(samples)
-        logging.debug(type(samples))
-        show_shape(samples)
+        # logging.debug(samples)
+        # logging.debug(type(samples))
+        # show_shape(samples)
         return samples
 # Move decode outside this node
 #         logging.debug("- Samples to VRAM")
