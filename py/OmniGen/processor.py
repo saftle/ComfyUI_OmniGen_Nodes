@@ -18,9 +18,8 @@ from OmniGen.utils import (
     requires_grad,
     center_crop_arr,
     crop_arr,
+    show_shape,
 )
-
-
 
 
 class OmniGenProcessor:
@@ -120,7 +119,8 @@ class OmniGenProcessor:
         logging.info(f'instructions: {instructions}, len: {len(instructions)}')
         logging.info('Negative prompt: '+negative_prompt)
         if input_images:
-            logging.info(f'input_images: {input_images}, len: {len(input_images)}')
+            logging.info(f'input_images: {show_shape(input_images)}, len: {len(input_images)}')
+            logging.debug(f'input_images: {input_images}, len: {len(input_images)}')
         else:
             logging.info('No images')
         for i in range(len(instructions)):
