@@ -44,11 +44,10 @@ class OmniGenWrapper(OmniGen):
         return model
 
 
-
 class OmniGenPipelineWrapper(OmniGenPipeline):
     @classmethod
-    def from_pretrained(cls, model, dtype = torch.bfloat16):
-        return cls(model, None, dtype=dtype)  # The processor was moved outside
+    def from_pretrained(cls, model, dtype = torch.bfloat16, device=None):
+        return cls(model, None, dtype=dtype, device=device)  # The processor was moved outside
 
     # TODO: Move to main class? Undo changes in main class? do one of the two
     @torch.no_grad()
@@ -160,8 +159,7 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
             )
 
         show_mem()
-        torch.cuda.empty_cache()  # Clear VRAM
-        gc.collect()  # Run garbage collection to free system RAM
+        self.flush_mem()
         show_mem()
 
         if conditioner['separate_cfg_infer']:

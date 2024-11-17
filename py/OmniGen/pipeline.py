@@ -108,16 +108,21 @@ class OmniGenPipeline:
             return [x.to(self.device) for x in data]
         return data.to(self.device)
 
+    @staticmethod
+    def flush_mem():
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()  # Clear VRAM
+            gc.collect()  # Run garbage collection to free system RAM
+
     def enable_model_cpu_offload(self):
         self.model_cpu_offload = True
         self.model.to("cpu")
-        torch.cuda.empty_cache()  # Clear VRAM
-        gc.collect()  # Run garbage collection to free system RAM
     
     def disable_model_cpu_offload(self):
         self.model_cpu_offload = False
         if self.model:
             self.model.to(self.device)
+            self.flush_mem()
 
     @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
@@ -275,8 +280,7 @@ class OmniGenPipeline:
             )
 
         show_mem()
-        torch.cuda.empty_cache()  # Clear VRAM
-        gc.collect()  # Run garbage collection to free system RAM
+        self.flush_mem()
         show_mem()
         
         if separate_cfg_infer:

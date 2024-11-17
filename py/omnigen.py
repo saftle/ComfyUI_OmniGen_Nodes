@@ -1,12 +1,18 @@
-import folder_paths
-from huggingface_hub import snapshot_download
+# Python modules
 import logging
-import numpy as np
 import os
-from PIL import Image
 import sys
+
+# ML modules
+from huggingface_hub import snapshot_download
+import numpy as np
+from PIL import Image
 import torch
 from torchvision import transforms
+
+# Comfy_UI modules
+import folder_paths
+import model_management
 
 sys.path.append(os.path.dirname(__file__))
 from .omnigen_wrappers import OmniGenProcessorWrapper, OmniGenPipelineWrapper, OmniGenWrapper
@@ -372,7 +378,16 @@ class OmniGenSampler:
     CATEGORY = 'OmniGen'
 
     def run(self, vae, model, conditioner, guidance_scale, img_guidance_scale, steps, use_kv_cache, seed, move_to_ram):
-        self.pipe = OmniGenPipelineWrapper.from_pretrained(model)
+        # Check the target device
+        device = model_management.get_torch_device()
+        logging.info(f"Using {device} for the model")
+        # Check if using BF16 is convenient
+        res = model_management.should_use_bf16(device, 3.8e9)
+        dtype = torch.bfloat16 if res else torch.float32
+        dtype_s = 'BF16' if res else 'FP32'
+        logging.info(f"Using {dtype_s} for the model")
+        # Create the pipeline
+        self.pipe = OmniGenPipelineWrapper.from_pretrained(model, dtype=dtype, device=device)
         # Generate image
         output = self.pipe(conditioner,
                            num_inference_steps=steps,
@@ -405,6 +420,7 @@ class OmniGenLoader:
         quantize = weight_dtype == "int8"
         if self.model is None or self.model.quantized != quantize:
             logging.info(f"Loading OmniGen Model")
+            # Paths
             fname = folder_paths.get_full_path('LLM', name)
             cfg_name = os.path.join(os.path.dirname(__file__), 'model')
             self.model = OmniGenWrapper.from_pretrained(cfg_name, fname, quantize=quantize)

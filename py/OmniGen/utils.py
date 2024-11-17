@@ -1,4 +1,5 @@
 import logging
+from model_management import get_total_memory, get_free_memory
 
 from PIL import Image
 import torch
@@ -141,8 +142,6 @@ def show_shape(te):
 
 
 def show_mem():
-    device = torch.device('cuda:0')
-    free, total = torch.cuda.mem_get_info(device)
-    free = round(free/(1024*1024))
-    total = round(total/(1024*1024))
+    free = round(get_free_memory()/(1024*1024))
+    total = round(get_total_memory()/(1024*1024))
     logging.info(f"Memory: {total-free}/{total} MiB free: {free} MiB")

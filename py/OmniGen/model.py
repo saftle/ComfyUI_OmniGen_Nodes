@@ -169,6 +169,7 @@ class Int8Quantized(nn.Module):
             weight = weight.to(dtype)
         return weight
 
+
 class QuantizedLinear(nn.Module):
     def __init__(self, weight, bias=None):
         super().__init__()
