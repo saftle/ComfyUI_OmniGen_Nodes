@@ -6,12 +6,14 @@ import os
 import pprint
 
 # ML modules
+from safetensors.torch import load_file
 from transformers import AutoTokenizer
 import torch
 
 # OmniGen
 from OmniGen import OmniGen, OmniGenProcessor, OmniGenPipeline, OmniGenScheduler
 from OmniGen.utils import show_mem, show_shape
+from OmniGen.transformer import Phi3Config
 
 
 class OmniGenProcessorWrapper(OmniGenProcessor):
@@ -21,14 +23,32 @@ class OmniGenProcessorWrapper(OmniGenProcessor):
         return cls(text_tokenizer)
 
 
+class OmniGenWrapper(OmniGen):
+    @classmethod
+    def from_pretrained(cls, cfg_name, model_name, quantize=False):
+        assert os.path.isfile(os.path.join(cfg_name, 'config.json'))
+        assert os.path.isfile(model_name)
+        logging.info("Loading config from "+cfg_name)
+        config = Phi3Config.from_pretrained(cfg_name)
+        logging.info("Initializing model")
+        model = cls(config)
+        logging.info("Loading safetensors from "+model_name)
+        ckpt = load_file(model_name)
+        model.load_state_dict(ckpt)
+        # Only quantize if explicitly requested
+        if quantize:
+            logging.info("Quantizing weights to 8-bit...")
+            model._quantize_module(model.llm)
+        model.quantized = quantize
+
+        return model
+
+
+
 class OmniGenPipelineWrapper(OmniGenPipeline):
     @classmethod
-    def from_pretrained(cls, model_name, quantization: bool=False):
-        logging.info(f"Loading OmniGen Model")
-        model = OmniGen.from_pretrained(model_name, quantize=quantization)
-        obj = cls(model, None)  # The processor was moved outside
-        obj.quantization = quantization
-        return obj
+    def from_pretrained(cls, model):
+        return cls(model, None)  # The processor was moved outside
 
     # TODO: Move to main class? Undo changes in main class? do one of the two
     @torch.no_grad()

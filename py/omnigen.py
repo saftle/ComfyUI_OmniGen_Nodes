@@ -9,20 +9,26 @@ import torch
 from torchvision import transforms
 
 sys.path.append(os.path.dirname(__file__))
-from .omnigen_wrappers import OmniGenProcessorWrapper, OmniGenPipelineWrapper
-from .OmniGen import OmniGenPipeline
+from .omnigen_wrappers import OmniGenProcessorWrapper, OmniGenPipelineWrapper, OmniGenWrapper
+from .OmniGen import OmniGenPipeline, OmniGen
 from .OmniGen.utils import show_shape, crop_arr, NEGATIVE_PROMPT
 
-model_path = os.path.join(folder_paths.models_dir, "OmniGen", "Shitao", "OmniGen-v1")
 r1 = [[0, 1], [1, 0]]
 g1 = [[1, 0], [0, 1]]
 b1 = [[1, 1], [0, 0]]
 EMPTY_IMG = torch.tensor([r1, g1, b1]).unsqueeze(0)
+# OmniGen is a Phy-3 based model, technically an SLM model, so I agree this should be stored in:
+# <MODELS>/LLM/OmniGen-v1/
+# Currently Comfy_UI doesn't define LLM, so here we add it
+if not 'LLM' in folder_paths.folder_names_and_paths:
+    folder_paths.folder_names_and_paths["LLM"] = ([os.path.join(folder_paths.models_dir, "LLM")], {'.safetensors'})
 
 
 def tensor2pil(t_image: torch.Tensor)  -> Image:
     return Image.fromarray(np.clip(255.0 * t_image.cpu().numpy().squeeze(), 0, 255).astype(np.uint8))
 
+
+model_path = os.path.join(folder_paths.models_dir, "OmniGen", "Shitao", "OmniGen-v1")
 
 class OmniGen_Model:
     def __init__(self, quantization):
@@ -330,16 +336,14 @@ class OmniGenProcessor:
 class OmniGenSampler:
     def __init__(self):
         self.NODE_NAME = "OmniGen Sampler"
-        self.pipe = None
 
     @classmethod
     def INPUT_TYPES(s):
-        dtype_list = ["default", "int8"]
         return {
             "required": {
-                "vae": ("VAE",),
+                "vae": ("VAE", {"tooltip": "SDXL VAE to encode the images"}),
+                "model": ("OMNI_MODEL", {"tooltip": "OmniGen V1 model"}),
                 "conditioner": ("OMNI_FULL_COND",),
-                "dtype": (dtype_list,),
                 "guidance_scale": ("FLOAT", {
                     "default": 2.5, "min": 1.0, "max": 5.0, "step": 0.1
                 }),
@@ -356,9 +360,6 @@ class OmniGenSampler:
                 "seed": ("INT", {
                     "default": 0, "min": 0, "max": 1e18, "step": 1
                 }),
-                "cache_model": ("BOOLEAN", {
-                    "default": True, "tooltip": "Cache model in V/RAM to save loading time"
-                }),
                 "move_to_ram": ("BOOLEAN", {
                     "default": True, "tooltip": "Keep in VRAM only the needed models. Move to main RAM the rest"
                 }),
@@ -370,16 +371,8 @@ class OmniGenSampler:
     FUNCTION = "run"
     CATEGORY = 'OmniGen'
 
-    def run(self, vae, conditioner, dtype, guidance_scale, img_guidance_scale, steps, use_kv_cache, seed, cache_model,
-            move_to_ram):
-
-        if not os.path.exists(os.path.join(model_path, "model.safetensors")):
-            snapshot_download("Shitao/OmniGen-v1", local_dir=model_path)
-
-        quantization = True if dtype == "int8" else False
-        if self.pipe is None or self.pipe.quantization != quantization:
-            self.pipe = OmniGenPipelineWrapper.from_pretrained(model_path, quantization)
-
+    def run(self, vae, model, conditioner, guidance_scale, img_guidance_scale, steps, use_kv_cache, seed, move_to_ram):
+        self.pipe = OmniGenPipelineWrapper.from_pretrained(model)
         # Generate image
         output = self.pipe(conditioner,
                            num_inference_steps=steps,
@@ -390,16 +383,32 @@ class OmniGenSampler:
                            move_to_ram=move_to_ram,
                            vae = vae,)
 
-        if not cache_model:
-            self.pipe = None
-            import gc
-            # Cleanup
-            gc.collect()
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                torch.cuda.ipc_collect()
-
         return ({'samples': output},)
+
+
+class OmniGenLoader:
+    def __init__(self):
+        self.NODE_NAME = "OmniGen Loader"
+        self.model = None
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": { "name": (folder_paths.get_filename_list("LLM"), ),
+                              "weight_dtype": (["default", "int8"],)
+                              #"weight_dtype": (["default", "fp8_e4m3fn", "fp8_e4m3fn_fast", "fp8_e5m2"],)
+                             }}
+    RETURN_TYPES = ("OMNI_MODEL",)
+    FUNCTION = "load_model"
+    CATEGORY = "OmniGen"
+
+    def load_model(self, name, weight_dtype):
+        quantize = weight_dtype == "int8"
+        if self.model is None or self.model.quantized != quantize:
+            logging.info(f"Loading OmniGen Model")
+            fname = folder_paths.get_full_path('LLM', name)
+            cfg_name = os.path.join(os.path.dirname(__file__), 'model')
+            self.model = OmniGenWrapper.from_pretrained(cfg_name, fname, quantize=quantize)
+        return (self.model,)
 
 
 NODE_CLASS_MAPPINGS = {
@@ -407,6 +416,7 @@ NODE_CLASS_MAPPINGS = {
     "setOmniGenConditioner": OmniGenConditioner,
     "setOmniGenProcessor": OmniGenProcessor,
     "setOmniGenSampler": OmniGenSampler,
+    "setOmniGenLoader": OmniGenLoader,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -414,6 +424,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "setOmniGenConditioner": "OmniGen Conditioner (set)",
     "setOmniGenProcessor": "OmniGen Processor (set)",
     "setOmniGenSampler": "OmniGen Sampler (set)",
+    "setOmniGenLoader": "OmniGen Loader (set)",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
