@@ -31,7 +31,7 @@ class OmniGenWrapper(OmniGen):
         logging.info("Loading config from "+cfg_name)
         config = Phi3Config.from_pretrained(cfg_name)
         logging.info("Initializing model")
-        model = cls(config)
+        model = cls(config, pre_trained=True)
         logging.info("Loading safetensors from "+model_name)
         ckpt = load_file(model_name)
         model.load_state_dict(ckpt)

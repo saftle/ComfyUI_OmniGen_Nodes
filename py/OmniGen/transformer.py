@@ -29,6 +29,15 @@ class Phi3Transformer(Phi3Model):
     Args:
         config: Phi3Config
     """
+    def __init__(self, config, pre_trained=False):
+        if pre_trained:
+            self._init_weights = self.no_init_weights
+            logger.info("Skipping weights initialization because we will load them from the checkpoint")
+        super().__init__(config)
+
+    def no_init_weights(self, module):
+        pass
+
     def prefetch_layer(self, layer_idx: int, device: torch.device):
         "Starts prefetching the next layer cache"
         with torch.cuda.stream(self.prefetch_stream):

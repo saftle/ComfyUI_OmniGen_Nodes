@@ -194,6 +194,7 @@ class OmniGen(nn.Module, PeftAdapterMixin):
         in_channels=4,
         pe_interpolation: float = 1.0,
         pos_embed_max_size: int = 192,
+        pre_trained=False,
     ):
         super().__init__()
         self.in_channels = in_channels
@@ -216,8 +217,7 @@ class OmniGen(nn.Module, PeftAdapterMixin):
         self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
 
         self.initialize_weights()
-
-        self.llm = Phi3Transformer(config=transformer_config)
+        self.llm = Phi3Transformer(config=transformer_config, pre_trained=pre_trained)
         self.llm.config.use_cache = False
 
     def _quantize_module(self, module):
