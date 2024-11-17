@@ -23,7 +23,6 @@ from safetensors.torch import load_file
 from OmniGen import OmniGen, OmniGenProcessor, OmniGenScheduler
 from OmniGen.utils import show_mem, show_shape
 
-
 EXAMPLE_DOC_STRING = """
     Examples:
         ```py
@@ -102,7 +101,6 @@ class OmniGenPipeline:
 
     def vae_encode(self, vae, img):
         """ Encode the image and move it to the device and data type used by the model """
-        img = img.permute(0, 2, 3, 1) * 0.5 + 0.5
         return vae.encode(img).mul_(0.13025).to(self.device, dtype=torch.bfloat16)
     
     def move_to_device(self, data):

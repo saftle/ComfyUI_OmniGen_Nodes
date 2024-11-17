@@ -21,6 +21,9 @@ from OmniGen.utils import (
     show_shape,
     NEGATIVE_PROMPT,
 )
+# Comfy_UI format is [B,H,W,C] and normalized in [0,1]
+HEIGHT_DIM = -3
+WIDTH_DIM = -2
 
 
 class OmniGenProcessor:
@@ -44,9 +47,7 @@ class OmniGenProcessor:
         return cls(text_tokenizer)
 
     def process_image(self, image):
-        """ Remove batch dimension, change from [W,H,C] to [C,W,H] and from [0,1] to [-1,1]
-            All of this is how the VAE will accept """
-        return image.squeeze(0).movedim(-1, 0) * 2.0 - 1.0
+        return image.squeeze(0)
     
     def process_multi_modal_prompt(self, text, input_images):
         text = self.add_prefix_instruction(text)
@@ -78,7 +79,7 @@ class OmniGenProcessor:
             all_input_ids.extend(prompt_chunks[i])
             if i != len(prompt_chunks) -1:
                 start_inx = len(all_input_ids)
-                size = input_images[i].size(-2) *  input_images[i].size(-1) // 16 // 16
+                size = input_images[i].size(HEIGHT_DIM) * input_images[i].size(WIDTH_DIM) // 16 // 16
                 img_inx.append([start_inx, start_inx+size])
                 all_input_ids.extend([0]*size)
 
@@ -143,7 +144,8 @@ class OmniGenProcessor:
                     img_cfg_mllm_input = neg_mllm_input
 
             if use_input_image_size_as_output:
-                input_data.append((mllm_input, neg_mllm_input, img_cfg_mllm_input, [mllm_input['pixel_values'][0].size(-2), mllm_input['pixel_values'][0].size(-1)]))
+                input_data.append((mllm_input, neg_mllm_input, img_cfg_mllm_input,
+                                  [mllm_input['pixel_values'][0].size(HEIGHT_DIM), mllm_input['pixel_values'][0].size(WIDTH_DIM)]))
             else:
                 input_data.append((mllm_input, neg_mllm_input, img_cfg_mllm_input, [height, width]))
 
