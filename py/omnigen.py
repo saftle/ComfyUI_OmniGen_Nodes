@@ -9,6 +9,7 @@ import torch
 from torchvision import transforms
 
 sys.path.append(os.path.dirname(__file__))
+from .omnigen_wrappers import OmniGenProcessorWrapper
 from .OmniGen import OmniGenPipeline
 from .OmniGen.utils import show_shape, crop_arr, NEGATIVE_PROMPT
 
@@ -242,14 +243,102 @@ class OmniGenConditioner:
         return ({'positive': prompt, 'negative': negative, 'images': input_images}, crp_img_1, crp_img_2, crp_img_3,)
 
 
+class OmniGenProcessor:
+    def __init__(self):
+        self.NODE_NAME = "OmniGen Processor"
+        self.processor = None
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "condition_1": ("OMNI_COND",),
+                "separate_cfg_infer": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Can save memory when generating images of large size at the expense of slower inference"
+                }),
+                "size_from_first_image": ("BOOLEAN", {
+                    "default": True, "tooltip": "Output size will be the same of the first image"
+                }),
+                "width": ("INT", {
+                    "default": 512, "min": 16, "max": 2048, "step": 16,
+                    "tooltip": "Width of the output image, unless size_from_first_image is enabled",
+                }),
+                "height": ("INT", {
+                    "default": 512, "min": 16, "max": 2048, "step": 16,
+                    "tooltip": "Height of the output image, unless size_from_first_image is enabled",
+                }),
+            },
+            "optional": {
+                "condition_2": ("OMNI_COND",),
+                "condition_3": ("OMNI_COND",),
+            }
+        }
+
+    RETURN_TYPES = ("OMNI_FULL_COND",)
+    RETURN_NAMES = ("conditioner", )
+    FUNCTION = "run"
+    CATEGORY = 'OmniGen'
+
+    def run(self, condition_1, separate_cfg_infer, size_from_first_image, width, height, condition_2=None, condition_3=None):
+        positive = [condition_1['positive']]
+        negative = [condition_1['negative']]
+        images = [condition_1['images']]
+
+        if condition_2 is not None:
+            positive.append(condition_2['positive'])
+            negative.append(condition_2['negative'])
+            images.append(condition_2['images'])
+
+        if condition_3 is not None:
+            positive.append(condition_3['positive'])
+            negative.append(condition_3['negative'])
+            images.append(condition_3['images'])
+
+        found_images = False
+        final_images = []
+        for img in images:
+            if img is None:
+                final_images.append([])
+            else:
+                found_images = True
+                final_images.append(img)
+        if not found_images:
+            final_images = None
+
+        if size_from_first_image:
+            assert final_images is not None, "Asking to use the size of the first image, but no images provided"
+            for imgs in final_images:
+                if len(imgs):
+                    img = imgs[0]
+                    break
+            # Images are in Comfy_UI format [B,H,W,C]
+            width = img.size(-2)
+            height = img.size(-3)
+
+        if not self.processor:
+            self.processor = OmniGenProcessorWrapper.from_pretrained()
+
+        input_data = self.processor(positive, final_images, height=height, width=width, use_img_cfg=final_images is not None,
+                                    separate_cfg_input=separate_cfg_infer, negative_prompt=negative)
+
+        #return ({'positive': positive, 'negative': negative, 'images': final_images, 'separate_cfg_infer': separate_cfg_infer},)
+        input_data['separate_cfg_infer'] = separate_cfg_infer
+        input_data['height'] = width
+        input_data['width'] = height
+        return (input_data,)
+
+
 NODE_CLASS_MAPPINGS = {
     "dzOmniGenWrapper": DZ_OmniGenV1,
     "setOmniGenConditioner": OmniGenConditioner,
+    "setOmniGenProcessor": OmniGenProcessor,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "dzOmniGenWrapper": "😺dz: OmniGen Wrapper",
     "setOmniGenConditioner": "OmniGen Conditioner (set)",
+    "setOmniGenProcessor": "OmniGen Processor (set)",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
