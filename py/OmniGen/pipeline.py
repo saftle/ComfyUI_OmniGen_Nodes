@@ -2,7 +2,6 @@ import logging
 import os
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Union
-import gc
 import pprint
 import time
 
@@ -21,7 +20,7 @@ from diffusers.utils import (
 from safetensors.torch import load_file
 
 from OmniGen import OmniGen, OmniGenProcessor, OmniGenScheduler
-from OmniGen.utils import show_mem, show_shape, VAE_SCALE_FACTOR
+from OmniGen.utils import show_mem, show_shape, VAE_SCALE_FACTOR, flush_mem
 
 EXAMPLE_DOC_STRING = """
     Examples:
@@ -108,12 +107,6 @@ class OmniGenPipeline:
             return [x.to(self.device) for x in data]
         return data.to(self.device)
 
-    @staticmethod
-    def flush_mem():
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()  # Clear VRAM
-            gc.collect()  # Run garbage collection to free system RAM
-
     def enable_model_cpu_offload(self):
         self.model_cpu_offload = True
         self.model.to("cpu")
@@ -122,7 +115,7 @@ class OmniGenPipeline:
         self.model_cpu_offload = False
         if self.model:
             self.model.to(self.device)
-            self.flush_mem()
+            flush_mem()
 
     @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
@@ -280,7 +273,7 @@ class OmniGenPipeline:
             )
 
         show_mem()
-        self.flush_mem()
+        flush_mem()
         show_mem()
         
         if separate_cfg_infer:

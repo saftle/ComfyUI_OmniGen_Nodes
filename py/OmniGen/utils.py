@@ -1,3 +1,4 @@
+import gc
 import logging
 from model_management import get_total_memory, get_free_memory
 
@@ -145,3 +146,9 @@ def show_mem():
     free = round(get_free_memory()/(1024*1024))
     total = round(get_total_memory()/(1024*1024))
     logging.info(f"Memory used: {total-free}/{total} MiB free: {free} MiB")
+
+
+def flush_mem():
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()  # Clear VRAM
+    gc.collect()  # Run garbage collection to free system RAM

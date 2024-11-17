@@ -1,18 +1,17 @@
 from tqdm import tqdm
 from comfy.utils import ProgressBar
 from typing import Optional, Dict, Any, Tuple, List
-import gc
 
 import torch
 from transformers.cache_utils import Cache, DynamicCache, OffloadedCache
-
+from OmniGen.utils import flush_mem
 
 
 class OmniGenCache(DynamicCache):
     def __init__(self, 
                     num_tokens_for_img: int, offload_kv_cache: bool=False) -> None:
         if not torch.cuda.is_available():
-            print("No avaliable GPU, offload_kv_cache wiil be set to False, which will result in large memory usage and time cost when input multiple images!!!")
+            print("No avaliable GPU, offload_kv_cache will be set to False, which will result in large memory usage and time cost when input multiple images!!!")
             offload_kv_cache = False
             raise RuntimeError("OffloadedCache can only be used with a GPU")
         super().__init__()
@@ -179,8 +178,5 @@ class OmniGenScheduler:
             pbar.update(1)
 
         del cache
-        torch.cuda.empty_cache()  
-        gc.collect()
+        flush_mem()
         return z
-
-    

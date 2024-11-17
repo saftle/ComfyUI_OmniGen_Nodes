@@ -1,6 +1,5 @@
 # This code is used to call some components of OmniGen in a different order
 # Python base modules
-import gc
 import logging
 import os
 import pprint
@@ -12,7 +11,7 @@ import torch
 
 # OmniGen
 from OmniGen import OmniGen, OmniGenProcessor, OmniGenPipeline, OmniGenScheduler
-from OmniGen.utils import show_mem, show_shape, VAE_SCALE_FACTOR
+from OmniGen.utils import show_mem, show_shape, VAE_SCALE_FACTOR, flush_mem
 from OmniGen.transformer import Phi3Config
 
 
@@ -159,7 +158,7 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
             )
 
         show_mem()
-        self.flush_mem()
+        flush_mem()
         show_mem()
 
         if conditioner['separate_cfg_infer']:
