@@ -21,7 +21,7 @@ from diffusers.utils import (
 from safetensors.torch import load_file
 
 from OmniGen import OmniGen, OmniGenProcessor, OmniGenScheduler
-from OmniGen.utils import show_mem, show_shape
+from OmniGen.utils import show_mem, show_shape, VAE_SCALE_FACTOR
 
 EXAMPLE_DOC_STRING = """
     Examples:
@@ -101,7 +101,8 @@ class OmniGenPipeline:
 
     def vae_encode(self, vae, img):
         """ Encode the image and move it to the device and data type used by the model """
-        return vae.encode(img).mul_(0.13025).to(self.device, dtype=torch.bfloat16)
+        # Note: the result is in the CPU and using FP32, we move it back to the GPU to be used by the model
+        return vae.encode(img).mul_(VAE_SCALE_FACTOR).to(self.device, dtype=self.dtype)
     
     def move_to_device(self, data):
         if isinstance(data, list):

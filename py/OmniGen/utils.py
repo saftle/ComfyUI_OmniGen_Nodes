@@ -8,6 +8,8 @@ NEGATIVE_PROMPT = ("low quality, jpeg artifacts, ugly, duplicate, morbid, mutila
                    "poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, "
                    "bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, "
                    "missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers.")
+# The "scaling_factor" for the SDXL VAE
+VAE_SCALE_FACTOR = 0.13025
 
 
 def create_logger(logging_dir):

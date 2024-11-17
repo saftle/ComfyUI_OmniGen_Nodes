@@ -12,7 +12,7 @@ import torch
 
 # OmniGen
 from OmniGen import OmniGen, OmniGenProcessor, OmniGenPipeline, OmniGenScheduler
-from OmniGen.utils import show_mem, show_shape
+from OmniGen.utils import show_mem, show_shape, VAE_SCALE_FACTOR
 from OmniGen.transformer import Phi3Config
 
 
@@ -196,6 +196,5 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
             self.model.to('cpu')
         show_mem()
 
-        samples = samples.to(torch.float32)
-        samples = samples / 0.13025
+        samples = samples.to(torch.float32) / VAE_SCALE_FACTOR
         return samples
