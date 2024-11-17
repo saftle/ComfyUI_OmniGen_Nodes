@@ -9,7 +9,7 @@ import torch
 from torchvision import transforms
 
 sys.path.append(os.path.dirname(__file__))
-from .omnigen_wrappers import OmniGenProcessorWrapper
+from .omnigen_wrappers import OmniGenProcessorWrapper, OmniGenPipelineWrapper
 from .OmniGen import OmniGenPipeline
 from .OmniGen.utils import show_shape, crop_arr, NEGATIVE_PROMPT
 
@@ -27,10 +27,7 @@ def tensor2pil(t_image: torch.Tensor)  -> Image:
 class OmniGen_Model:
     def __init__(self, quantization):
         self.quantization = quantization
-        self.pipe = OmniGenPipeline.from_pretrained(
-                    model_path,
-                    Quantization=quantization
-                )
+        self.pipe = OmniGenPipeline.from_pretrained(model_path, Quantization=quantization)
 
 
 def validate_image(idx, image, prompt, max_input_image_size):
@@ -322,23 +319,101 @@ class OmniGenProcessor:
         input_data = self.processor(positive, final_images, height=height, width=width, use_img_cfg=final_images is not None,
                                     separate_cfg_input=separate_cfg_infer, negative_prompt=negative)
 
-        #return ({'positive': positive, 'negative': negative, 'images': final_images, 'separate_cfg_infer': separate_cfg_infer},)
         input_data['separate_cfg_infer'] = separate_cfg_infer
-        input_data['height'] = width
-        input_data['width'] = height
+        input_data['input_images'] = final_images
+        input_data['num_conditions'] = len(positive)
+        input_data['height'] = height
+        input_data['width'] = width
         return (input_data,)
+
+
+class OmniGenSampler:
+    def __init__(self):
+        self.NODE_NAME = "OmniGen Sampler"
+        self.pipe = None
+
+    @classmethod
+    def INPUT_TYPES(s):
+        dtype_list = ["default", "int8"]
+        return {
+            "required": {
+                "conditioner": ("OMNI_FULL_COND",),
+                "dtype": (dtype_list,),
+                "vae": ("VAE",),
+                "guidance_scale": ("FLOAT", {
+                    "default": 2.5, "min": 1.0, "max": 5.0, "step": 0.1
+                }),
+                "img_guidance_scale": ("FLOAT", {
+                    "default": 1.6, "min": 1.0, "max": 2.0, "step": 0.1
+                }),
+                "steps": ("INT", {
+                    "default": 25, "min": 1, "max": 100, "step": 1
+                }),
+                "use_kv_cache": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Enable kv cache to speed up the inference"
+                }),
+                "seed": ("INT", {
+                    "default": 0, "min": 0, "max": 1e18, "step": 1
+                }),
+                "cache_model": ("BOOLEAN", {
+                    "default": True, "tooltip": "Cache model in V/RAM to save loading time"
+                }),
+                "move_to_ram": ("BOOLEAN", {
+                    "default": True, "tooltip": "Keep in VRAM only the needed models. Move to main RAM the rest"
+                }),
+            },
+        }
+
+    RETURN_TYPES = ("LATENT",)
+    RETURN_NAMES = ("latent",)
+    FUNCTION = "run"
+    CATEGORY = 'OmniGen'
+
+    def run(self, conditioner, dtype, vae, guidance_scale, img_guidance_scale, steps, use_kv_cache, seed, cache_model,
+            move_to_ram):
+
+        if not os.path.exists(os.path.join(model_path, "model.safetensors")):
+            snapshot_download("Shitao/OmniGen-v1", local_dir=model_path)
+
+        quantization = True if dtype == "int8" else False
+        if self.pipe is None or self.pipe.quantization != quantization:
+            self.pipe = OmniGenPipelineWrapper.from_pretrained(model_path, quantization)
+
+        # Generate image
+        output = self.pipe(conditioner,
+                           num_inference_steps=steps,
+                           guidance_scale=guidance_scale,
+                           img_guidance_scale=img_guidance_scale,
+                           use_kv_cache=use_kv_cache,
+                           seed=seed,
+                           move_to_ram=move_to_ram,
+                           vae = vae,)
+
+        if not cache_model:
+            self.pipe = None
+            import gc
+            # Cleanup
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+
+        return ({'samples': output},)
 
 
 NODE_CLASS_MAPPINGS = {
     "dzOmniGenWrapper": DZ_OmniGenV1,
     "setOmniGenConditioner": OmniGenConditioner,
     "setOmniGenProcessor": OmniGenProcessor,
+    "setOmniGenSampler": OmniGenSampler,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "dzOmniGenWrapper": "😺dz: OmniGen Wrapper",
     "setOmniGenConditioner": "OmniGen Conditioner (set)",
     "setOmniGenProcessor": "OmniGen Processor (set)",
+    "setOmniGenSampler": "OmniGen Sampler (set)",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

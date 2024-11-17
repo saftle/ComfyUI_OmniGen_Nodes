@@ -246,7 +246,7 @@ class OmniGen(nn.Module, PeftAdapterMixin):
         config = Phi3Config.from_pretrained(model_name)
         model = cls(config)
         if os.path.exists(os.path.join(model_name, 'model.safetensors')):
-            logging.debug("Loading safetensors")
+            logging.info("Loading safetensors")
             ckpt = load_file(os.path.join(model_name, 'model.safetensors'))
         else:
             ckpt = torch.load(os.path.join(model_name, 'model.pt'), map_location='cpu')
@@ -254,7 +254,7 @@ class OmniGen(nn.Module, PeftAdapterMixin):
 
         # Only quantize if explicitly requested
         if quantize:
-            logging.debug("Quantizing weights to 8-bit...")
+            logging.info("Quantizing weights to 8-bit...")
             model._quantize_module(model.llm)
 
         return model
