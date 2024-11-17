@@ -144,4 +144,4 @@ def show_shape(te):
 def show_mem():
     free = round(get_free_memory()/(1024*1024))
     total = round(get_total_memory()/(1024*1024))
-    logging.info(f"Memory: {total-free}/{total} MiB free: {free} MiB")
+    logging.info(f"Memory used: {total-free}/{total} MiB free: {free} MiB")
