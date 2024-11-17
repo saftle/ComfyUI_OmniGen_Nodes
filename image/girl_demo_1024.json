@@ -1,6 +1,6 @@
 {
-  "last_node_id": 12,
-  "last_link_id": 11,
+  "last_node_id": 13,
+  "last_link_id": 15,
   "nodes": [
     {
       "id": 1,
@@ -217,7 +217,7 @@
         "1": 250
       },
       "flags": {},
-      "order": 6,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -233,110 +233,6 @@
       "widgets_values": []
     },
     {
-      "id": 7,
-      "type": "setOmniGenProcessor",
-      "pos": {
-        "0": 4700,
-        "1": -840
-      },
-      "size": {
-        "0": 320,
-        "1": 170
-      },
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "condition_1",
-          "type": "OMNI_COND",
-          "link": 5
-        },
-        {
-          "name": "condition_2",
-          "type": "OMNI_COND",
-          "link": null,
-          "shape": 7
-        },
-        {
-          "name": "condition_3",
-          "type": "OMNI_COND",
-          "link": null,
-          "shape": 7
-        }
-      ],
-      "outputs": [
-        {
-          "name": "conditioner",
-          "type": "OMNI_FULL_COND",
-          "links": [
-            7
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "setOmniGenProcessor"
-      },
-      "widgets_values": [
-        true,
-        1024,
-        512,
-        512
-      ]
-    },
-    {
-      "id": 9,
-      "type": "setOmniGenSampler",
-      "pos": {
-        "0": 5080,
-        "1": -840
-      },
-      "size": {
-        "0": 320,
-        "1": 270
-      },
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "conditioner",
-          "type": "OMNI_FULL_COND",
-          "link": 7
-        },
-        {
-          "name": "vae",
-          "type": "VAE",
-          "link": 10
-        }
-      ],
-      "outputs": [
-        {
-          "name": "latent",
-          "type": "LATENT",
-          "links": [
-            9
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "setOmniGenSampler"
-      },
-      "widgets_values": [
-        "int8",
-        2.5,
-        1.6,
-        5,
-        false,
-        222,
-        "fixed",
-        true,
-        true
-      ]
-    },
-    {
       "id": 11,
       "type": "VAEDecode",
       "pos": {
@@ -348,7 +244,7 @@
         "1": 50
       },
       "flags": {},
-      "order": 8,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -389,7 +285,7 @@
         "1": 740
       },
       "flags": {},
-      "order": 9,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -426,8 +322,8 @@
           "name": "VAE",
           "type": "VAE",
           "links": [
-            10,
-            11
+            11,
+            14
           ],
           "slot_index": 0
         }
@@ -438,6 +334,146 @@
       "widgets_values": [
         "sdxl/sdxl_vae.safetensors"
       ]
+    },
+    {
+      "id": 7,
+      "type": "setOmniGenProcessor",
+      "pos": {
+        "0": 4700,
+        "1": -840
+      },
+      "size": {
+        "0": 320,
+        "1": 170
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "condition_1",
+          "type": "OMNI_COND",
+          "link": 5
+        },
+        {
+          "name": "condition_2",
+          "type": "OMNI_COND",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "condition_3",
+          "type": "OMNI_COND",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "conditioner",
+          "type": "OMNI_FULL_COND",
+          "links": [
+            13
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "setOmniGenProcessor"
+      },
+      "widgets_values": [
+        true,
+        1024,
+        512,
+        512
+      ]
+    },
+    {
+      "id": 9,
+      "type": "setOmniGenSampler",
+      "pos": {
+        "0": 5080,
+        "1": -860
+      },
+      "size": {
+        "0": 320,
+        "1": 270
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 15
+        },
+        {
+          "name": "conditioner",
+          "type": "OMNI_FULL_COND",
+          "link": 13
+        }
+      ],
+      "outputs": [
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "links": [
+            9
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "setOmniGenSampler"
+      },
+      "widgets_values": [
+        "int8",
+        2.5,
+        1.6,
+        5,
+        false,
+        222,
+        "fixed",
+        true,
+        true
+      ]
+    },
+    {
+      "id": 13,
+      "type": "Reroute",
+      "pos": {
+        "0": 4930,
+        "1": -960
+      },
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 14
+        }
+      ],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            15
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": true,
+        "horizontal": false
+      }
     }
   ],
   "links": [
@@ -474,14 +510,6 @@
       "OMNI_COND"
     ],
     [
-      7,
-      7,
-      0,
-      9,
-      0,
-      "OMNI_FULL_COND"
-    ],
-    [
       8,
       11,
       0,
@@ -498,19 +526,35 @@
       "LATENT"
     ],
     [
-      10,
+      11,
       12,
       0,
-      9,
+      11,
       1,
       "VAE"
     ],
     [
-      11,
+      13,
+      7,
+      0,
+      9,
+      1,
+      "OMNI_FULL_COND"
+    ],
+    [
+      14,
       12,
       0,
-      11,
-      1,
+      13,
+      0,
+      "*"
+    ],
+    [
+      15,
+      13,
+      0,
+      9,
+      0,
       "VAE"
     ]
   ],
@@ -518,10 +562,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.8140274938684657,
+      "scale": 1.0834705943389287,
       "offset": [
-        -3271.028880480392,
-        1588.2155430257421
+        -3683.069990160269,
+        1528.8234131288632
       ]
     }
   },

@@ -337,9 +337,9 @@ class OmniGenSampler:
         dtype_list = ["default", "int8"]
         return {
             "required": {
+                "vae": ("VAE",),
                 "conditioner": ("OMNI_FULL_COND",),
                 "dtype": (dtype_list,),
-                "vae": ("VAE",),
                 "guidance_scale": ("FLOAT", {
                     "default": 2.5, "min": 1.0, "max": 5.0, "step": 0.1
                 }),
@@ -370,7 +370,7 @@ class OmniGenSampler:
     FUNCTION = "run"
     CATEGORY = 'OmniGen'
 
-    def run(self, conditioner, dtype, vae, guidance_scale, img_guidance_scale, steps, use_kv_cache, seed, cache_model,
+    def run(self, vae, conditioner, dtype, guidance_scale, img_guidance_scale, steps, use_kv_cache, seed, cache_model,
             move_to_ram):
 
         if not os.path.exists(os.path.join(model_path, "model.safetensors")):
