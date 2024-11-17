@@ -47,10 +47,12 @@ class OmniGenPipeline:
         model: OmniGen,
         processor: OmniGenProcessor,
         device: Union[str, torch.device] = None,
+        dtype: torch.dtype = torch.bfloat16,
     ):
         self.model = model
         self.processor = processor
         self.device = device
+        self.dtype = dtype
 
         if device is None:
             if torch.cuda.is_available():
@@ -62,11 +64,8 @@ class OmniGenPipeline:
                 self.device = torch.device("cpu")
 
         if self.model:
-            logging.info('To BF16')
-            self.model.to(torch.bfloat16)
-            logging.info('Eval')
+            self.model.to(self.dtype)
             self.model.eval()
-            logging.info('End of eval')
 
         self.model_cpu_offload = False
 

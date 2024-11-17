@@ -47,8 +47,8 @@ class OmniGenWrapper(OmniGen):
 
 class OmniGenPipelineWrapper(OmniGenPipeline):
     @classmethod
-    def from_pretrained(cls, model):
-        return cls(model, None)  # The processor was moved outside
+    def from_pretrained(cls, model, dtype = torch.bfloat16):
+        return cls(model, None, dtype=dtype)  # The processor was moved outside
 
     # TODO: Move to main class? Undo changes in main class? do one of the two
     @torch.no_grad()
@@ -59,7 +59,6 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
                  offload_model: bool = False,
                  use_kv_cache: bool = True,
                  offload_kv_cache: bool = True,
-                 dtype: torch.dtype = torch.bfloat16,
                  seed: int = None,
                  move_to_ram: bool = False,
                  vae = None,
@@ -85,8 +84,6 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
             offload_model (`bool`, *optional*, defaults to False): offload the model to cpu, which can save memory but slow down the generation
             seed (`int`, *optional*):
                 A random seed for generating output.
-            dtype (`torch.dtype`, *optional*, defaults to `torch.bfloat16`):
-                data type for the model
             move_to_ram (`bool`, *optional*, defaults to False):
                 Keep in VRAM only the needed models, otherwise move them to RAM.
                 Use it if you see allocation problems.
@@ -129,8 +126,9 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
             generator = None
         logging.info("- Create latents")
         show_mem()
+        # The model works with 2 or 3 latents, the last is the output. One input is for the (+) the other for the images
         latents = torch.randn(num_prompt, 4, latent_size_h, latent_size_w, device=self.device, generator=generator)
-        latents = torch.cat([latents]*(1+num_cfg), 0).to(dtype)
+        latents = torch.cat([latents]*(1+num_cfg), 0).to(self.dtype)
 
         input_img_latents = []
         if conditioner['separate_cfg_infer']:
@@ -173,7 +171,7 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
 
         # Move main model to gpu
         logging.info("- Model to VRAM")
-        self.model.to(self.device, dtype=dtype)
+        self.model.to(self.device, dtype=self.dtype)
         show_mem()
 
         if self.model_cpu_offload:
@@ -188,6 +186,7 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
         logging.info("- Inference")
         scheduler = OmniGenScheduler(num_steps=num_inference_steps)
         samples = scheduler(latents, func, model_kwargs, use_kv_cache=use_kv_cache, offload_kv_cache=offload_kv_cache)
+        # Separate the last latents, the one with the result
         samples = samples.chunk((1+num_cfg), dim=0)[0]
 
         show_mem()
