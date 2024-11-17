@@ -99,14 +99,14 @@ class OmniGenProcessor:
                 input_images: List[List[str]] = None,
                 height: int = 1024,
                 width: int = 1024,
-                negative_prompt: str = None,
+                negative_prompt: List[str] = None,
                 use_img_cfg: bool = True,
                 separate_cfg_input: bool = False,
                 use_input_image_size_as_output: bool=False,
                 ) -> Dict:
 
         if negative_prompt is None:
-            negative_prompt = NEGATIVE_PROMPT
+            negative_prompt = [NEGATIVE_PROMPT]
         if input_images is None:
             use_img_cfg = False
         if isinstance(instructions, str):
@@ -115,7 +115,7 @@ class OmniGenProcessor:
         
         input_data = []
         logging.info(f'instructions: {instructions}, len: {len(instructions)}')
-        logging.info('Negative prompt: '+negative_prompt)
+        logging.info('Negative prompt: '+str(negative_prompt))
         if input_images:
             logging.info(f'input_images: {show_shape(input_images)}, len: {len(input_images)}')
             logging.debug(f'input_images: {input_images}, len: {len(input_images)}')
@@ -134,7 +134,7 @@ class OmniGenProcessor:
 
         
             neg_mllm_input, img_cfg_mllm_input = None, None
-            neg_mllm_input = self.process_multi_modal_prompt(negative_prompt, None)
+            neg_mllm_input = self.process_multi_modal_prompt(negative_prompt[i], None)
             if use_img_cfg:
                 if cur_input_images is not None and len(cur_input_images) >= 1:
                     img_cfg_prompt = [f"<img><|image_{i+1}|></img>" for i in range(len(cur_input_images))]
