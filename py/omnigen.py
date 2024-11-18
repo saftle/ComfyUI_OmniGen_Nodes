@@ -27,7 +27,8 @@ EMPTY_IMG = torch.tensor([r1, g1, b1]).unsqueeze(0)
 # <MODELS>/LLM/OmniGen-v1/
 # Currently Comfy_UI doesn't define LLM, so here we add it
 if not 'LLM' in folder_paths.folder_names_and_paths:
-    folder_paths.folder_names_and_paths["LLM"] = ([os.path.join(folder_paths.models_dir, "LLM")], {'.safetensors'})
+    folder_paths.folder_names_and_paths["OmniGen"] = ([os.path.join(folder_paths.models_dir, "OmniGen"),
+                                                       os.path.join(folder_paths.models_dir, "LLM")], {'.safetensors'})
 
 
 def tensor2pil(t_image: torch.Tensor)  -> Image:
@@ -269,7 +270,7 @@ class OmniGenLoader:
 
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": { "name": (folder_paths.get_filename_list("LLM"), ),
+        return {"required": { "name": (folder_paths.get_filename_list("OmniGen"), ),
                               "weight_dtype": (["default", "int8"],)
                              }}
     RETURN_TYPES = ("OMNI_MODEL",)
@@ -281,7 +282,7 @@ class OmniGenLoader:
         if self.model is None or self.model.quantized != quantize:
             logging.info(f"Loading OmniGen Model")
             # Paths
-            fname = folder_paths.get_full_path('LLM', name)
+            fname = folder_paths.get_full_path('OmniGen', name)
             cfg_name = os.path.join(os.path.dirname(__file__), 'model')
             self.model = OmniGenWrapper.from_pretrained(cfg_name, fname, quantize=quantize)
         return (self.model,)
