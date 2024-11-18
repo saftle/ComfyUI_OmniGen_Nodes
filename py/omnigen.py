@@ -271,7 +271,7 @@ class OmniGenLoader:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": { "name": (folder_paths.get_filename_list("OmniGen"), ),
-                              "weight_dtype": (["default", "int8"],)
+                              "weight_dtype": (["int8", "default"],)
                              }}
     RETURN_TYPES = ("OMNI_MODEL",)
     FUNCTION = "load_model"
