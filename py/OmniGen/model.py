@@ -14,6 +14,7 @@ from huggingface_hub import snapshot_download
 from safetensors.torch import load_file
 
 from OmniGen.transformer import Phi3Config, Phi3Transformer
+from OmniGen.utils import show_mem, free_mem
 # Only for debug, used to skip the model load, makes a fast start-up
 DISABLE_MODEL = False
 
@@ -221,6 +222,8 @@ class OmniGen(nn.Module, PeftAdapterMixin):
         self.llm = Phi3Transformer(config=transformer_config, pre_trained=pre_trained)
         self.llm.config.use_cache = False
 
+        self.free_mem = free_mem()
+
     def _quantize_module(self, module):
         """
         Quantize a module to 8-bit precision
@@ -426,6 +429,7 @@ class OmniGen(nn.Module, PeftAdapterMixin):
             cond, uncond = torch.split(model_out, len(model_out) // 2, dim=0)
             cond = uncond + cfg_scale * (cond - uncond)
             model_out = [cond, cond]
+        self.free_mem = min(free_mem(), self.free_mem)
         
         return torch.cat(model_out, dim=0), past_key_values
 
@@ -446,6 +450,7 @@ class OmniGen(nn.Module, PeftAdapterMixin):
             model_out.append(temp_out)
             pask_key_values.append(temp_pask_key_values)
 
+        self.free_mem = min(free_mem(), self.free_mem)
         if len(model_out) == 3:
             cond, uncond, img_cond = model_out
             cond = uncond + img_cfg_scale * (img_cond - uncond) + cfg_scale * (cond - img_cond)

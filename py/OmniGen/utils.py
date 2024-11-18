@@ -142,10 +142,14 @@ def show_shape(te):
     return f"\033[96mShapes found ({kind}): {shapes}\033[0m"
 
 
-def show_mem():
-    free = round(get_free_memory()/(1024*1024))
+def show_mem(msg='', free=None):
+    free = round((free or get_free_memory())/(1024*1024))
     total = round(get_total_memory()/(1024*1024))
-    logging.info(f"Memory used: {total-free}/{total} MiB free: {free} MiB")
+    logging.info(f"Memory used{msg}: {total-free}/{total} MiB free: {free} MiB")
+
+
+def free_mem():
+    return get_free_memory()
 
 
 def flush_mem():

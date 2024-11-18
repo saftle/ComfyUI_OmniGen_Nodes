@@ -11,7 +11,7 @@ import torch
 
 # OmniGen
 from OmniGen import OmniGen, OmniGenProcessor, OmniGenPipeline, OmniGenScheduler
-from OmniGen.utils import show_mem, show_shape, VAE_SCALE_FACTOR, flush_mem
+from OmniGen.utils import show_mem, show_shape, VAE_SCALE_FACTOR, flush_mem, free_mem
 from OmniGen.transformer import Phi3Config
 
 
@@ -182,7 +182,9 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
 
         logging.info("- Inference")
         scheduler = OmniGenScheduler(num_steps=num_inference_steps)
+        self.model.free_mem = free_mem()
         samples = scheduler(latents, func, model_kwargs, use_kv_cache=use_kv_cache, offload_kv_cache=offload_kv_cache)
+        show_mem(' (Peak)', self.model.free_mem)
         # Separate the last latents, the one with the result
         samples = samples.chunk((1+num_cfg), dim=0)[0]
 

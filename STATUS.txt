@@ -1,9 +1,19 @@
 Working.
 - The cup change to coke and earrings removal is done well in 5 steps @ 1024x1024
 - Use separate_cfg_infer = True and dtype int8 for mid VRAM
-- Entering inference with 5907 MiB allocated, leaving with 6198 MiB
-- Peak: unkwnon? Might be more than 8 GiB, not sure
-- First run 111.54
-- Second  74 s @ 14 s/it
+- Entering inference with 5826 MiB allocated, leaving with 5975 MiB
+- Peak: 5808 to 6063 MiB Might be more than 8 GiB, not sure
+- First run 100 s
+- Second 76 s @ 14 s/it
 
+- Use separate_cfg_infer = False and dtype int8 for mid VRAM
+- Entering inference with 5962 MiB allocated, leaving with 5975 MiB
+- Peak: 6010 MiB Might be more than 8 GiB, not sure
+- Second 85 s @ 16 s/it
 
+Best options for RTX3060:
+separate_cfg_infer = True
+- Less memory and faster
+
+use_kv_cache = False
+- Faster, because even when each iteration is slower you need much less iterarions
