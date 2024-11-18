@@ -190,7 +190,7 @@ class OmniGen(nn.Module, PeftAdapterMixin):
     """
     def __init__(
         self,
-        transformer_config=Phi3Config,
+        transformer_config: Phi3Config,
         patch_size=2,
         in_channels=4,
         pe_interpolation: float = 1.0,
@@ -278,7 +278,8 @@ class OmniGen(nn.Module, PeftAdapterMixin):
 
         w = self.input_x_embedder.proj.weight.data
         nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
-        nn.init.constant_(self.x_embedder.proj.bias, 0)
+        nn.init.constant_(self.input_x_embedder.proj.bias, 0)  # Original
+        #nn.init.constant_(self.x_embedder.proj.bias, 0)  # Modified
 
 
         # Initialize timestep embedding MLP:
@@ -414,7 +415,7 @@ class OmniGen(nn.Module, PeftAdapterMixin):
         return latents
 
     @torch.no_grad()
-    def forward_with_cfg(self, x, timestep, input_ids, input_img_latents, input_image_sizes, attention_mask, position_ids, cfg_scale, use_img_cfg, img_cfg_scale, past_key_values, use_kv_cache, offload_model):      
+    def forward_with_cfg(self, x, timestep, input_ids, input_img_latents, input_image_sizes, attention_mask, position_ids, cfg_scale, use_img_cfg, img_cfg_scale, past_key_values, use_kv_cache, offload_model):
         self.llm.config.use_cache = use_kv_cache
         model_out, past_key_values = self.forward(x, timestep, input_ids, input_img_latents, input_image_sizes, attention_mask, position_ids, past_key_values=past_key_values, return_past_key_values=True, offload_model=offload_model)
         if use_img_cfg:
