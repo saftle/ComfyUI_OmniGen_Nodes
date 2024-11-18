@@ -152,6 +152,12 @@ def free_mem():
     return get_free_memory()
 
 
+def pixel_range(samples):
+    min_val = torch.min(samples)
+    max_val = torch.max(samples)
+    return f'Samples in [{min_val},{max_val}] range'
+
+
 def flush_mem():
     if torch.cuda.is_available():
         torch.cuda.empty_cache()  # Clear VRAM
