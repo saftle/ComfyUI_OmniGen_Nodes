@@ -245,6 +245,7 @@ class OmniGenSampler:
         # Check the target device
         device = model_management.get_torch_device()
         logging.info(f"Using {device} for the model")
+        assert not use_kv_cache or device.startswith('cuda'), "`use_kv_cache` is implemented only for CUDA"
         # Check if using BF16 is convenient
         res = model_management.should_use_bf16(device, 3.8e9)
         dtype = torch.bfloat16 if res else torch.float32
