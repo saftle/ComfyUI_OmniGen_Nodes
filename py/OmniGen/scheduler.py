@@ -152,14 +152,16 @@ class OmniGenScheduler:
         
         return cache
 
-    def __call__(self, z, func, model_kwargs, use_kv_cache: bool=True, offload_kv_cache: bool=True):
+    def __call__(self, z, func, model_kwargs, use_kv_cache: bool=True, offload_kv_cache: bool=True, callback=None):
         num_tokens_for_img = z.size(-1)*z.size(-2) // 4
         if isinstance(model_kwargs['input_ids'], list):
             cache = [OmniGenCache(num_tokens_for_img, offload_kv_cache) for _ in range(len(model_kwargs['input_ids']))] if use_kv_cache else None
         else:
             cache = OmniGenCache(num_tokens_for_img, offload_kv_cache) if use_kv_cache else None
         results = {}
-        pbar = ProgressBar(self.num_steps)
+        if callback is None:
+            # Comfy_UI callback includes the progress bar
+            pbar = ProgressBar(self.num_steps)
         for i in tqdm(range(self.num_steps)):
             timesteps = torch.zeros(size=(len(z), )).to(z.device) + self.sigma[i]
             pred, cache = func(z, timesteps, past_key_values=cache, **model_kwargs)
@@ -175,7 +177,10 @@ class OmniGenScheduler:
 
                 model_kwargs['position_ids'] = self.crop_position_ids_for_cache(model_kwargs['position_ids'], num_tokens_for_img)
                 model_kwargs['attention_mask'] = self.crop_attention_mask_for_cache(model_kwargs['attention_mask'], num_tokens_for_img)
-            pbar.update(1)
+            if callback:
+                callback(i, z, z, self.num_steps)
+            else:
+                pbar.update(1)
 
         del cache
         flush_mem()

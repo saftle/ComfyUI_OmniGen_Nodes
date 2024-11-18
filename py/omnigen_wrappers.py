@@ -11,6 +11,8 @@ import torch
 
 # Comfy_UI modules
 import model_management
+from latent_formats import SDXL
+import latent_preview
 
 # OmniGen
 from OmniGen import OmniGen, OmniGenProcessor, OmniGenPipeline, OmniGenScheduler
@@ -44,6 +46,19 @@ class OmniGenWrapper(OmniGen):
         model.quantized = quantize
 
         return model
+
+
+# A couple of classes with the information needed by Comfy_UI to show the preview
+class FakeComfyModelModel(object):
+    def __init__(self):
+        # We use the SDXL VAE
+        self.latent_format = SDXL()
+
+
+class FakeComfyModel(object):
+    def __init__(self, device):
+        self.load_device = device
+        self.model = FakeComfyModelModel()
 
 
 class OmniGenPipelineWrapper(OmniGenPipeline):
@@ -144,6 +159,7 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
         # Stop here if we are skipping the model load
         assert self.model is not None, "Stopped because we didn't load the model"
 
+        callback = latent_preview.prepare_callback(FakeComfyModel(self.device), num_inference_steps)
         model_kwargs = dict(input_ids=self.move_to_device(conditioner['input_ids']),
             input_img_latents=input_img_latents,
             input_image_sizes=conditioner['input_image_sizes'],
@@ -182,7 +198,8 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
         logging.info("- Inference")
         scheduler = OmniGenScheduler(num_steps=num_inference_steps)
         self.model.free_mem = free_mem()
-        samples = scheduler(latents, func, model_kwargs, use_kv_cache=use_kv_cache, offload_kv_cache=offload_kv_cache)
+        samples = scheduler(latents, func, model_kwargs, use_kv_cache=use_kv_cache, offload_kv_cache=offload_kv_cache,
+                            callback=callback)
         show_mem(' (Peak)', self.model.free_mem)
         # Separate the last latents, the one with the result
         samples = samples.chunk((1+num_cfg), dim=0)[0]
