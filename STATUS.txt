@@ -11,6 +11,9 @@ Working.
 - Peak: 6010 MiB Might be more than 8 GiB, not sure
 - Second 85 s @ 16 s/it
 
+- Using 2 conditioners you get 2 images, they have some correlation
+
+
 Best options for RTX3060:
 separate_cfg_infer = True
 - Less memory and faster
