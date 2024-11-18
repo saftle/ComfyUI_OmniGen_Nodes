@@ -3,47 +3,72 @@
 ![image](image/omnigen_wrapper_example.jpg)    
 
 This node is an unofficial wrapper of the [OmniGen](https://github.com/VectorSpaceLab/OmniGen), running in ComfyUI.    
-The quantization code is referenced from [Manni1000/OmniGen](https://github.com/Manni1000/OmniGen).
+The quantization code is from [Manni1000/OmniGen](https://github.com/Manni1000/OmniGen).
+And the base node idea was from [chflame163/ComfyUI_OmniGen_Wrapper](https://github.com/chflame163/ComfyUI_OmniGen_Wrapper).
 
-This fork just adds better V/RAM handling.
 
+## Introduction
 
-### Install
+- OmniGen is an interesting model because it can do various tasks at once.
+- It isn't fast
+- It isn't high quality. You might want to refine the output using a better model like Flux.
+- It consumes plenty of VRAM, in my tests 6 GB were enough to play with the model, but as you add more images and
+  increase their size the memory consumption scales.
+- This an LLM (SLM in according to Microsoft) based on [Phi-3](https://azure.microsoft.com/en-us/blog/introducing-phi-3-redefining-whats-possible-with-slms/)
+  I can handle images mixed with the LLM tokes.
+
+## Installation
+
+### Install the nodes
+
 Open a terminal window in the ```ComfyUI/custom_nodes``` folder and enter the following command:
+
 ```
-git clone https://github.com/set-soft/ComfyUI_OmniGen_Wrapper.git
+git clone https://github.com/set-soft/ComfyUI_OmniGen_Nodes.git
 ```
 
 ### Install dependencies
+
 Run the following command in the Python environment of ComfyUI:
+
 ```
-python -s -m pip install -r ComfyUI/custom_nodes/ComfyUI_OmniGen_Wrapper/requirements.txt
+python -s -m pip install -r ComfyUI/custom_nodes/ComfyUI_OmniGen_Nodes/requirements.txt
 ```
 
 ### Download models
-When running the plugin for the first time, the model will be automatically downloaded. If the automatic download fails,
-you can manually download it.
 
-The files can be downloaded from [Shitao/OmniGen-v1](https://huggingface.co/Shitao/OmniGen-v1/tree/main) and copied to
-```ComfyUI/models/OmniGen/Shitao/OmniGen-v1``` folder.
+I recommend downloading the models by hand, is much faster:
 
-If you want to save disk space and/or download time use the FP8 quantized model downloading it from
-[silveroxides/OmniGen-V1](https://huggingface.co/silveroxides/OmniGen-V1/tree/main). Download all files except for
-`model.safetensors` (15.5 GB). Copy them to the ```ComfyUI/models/OmniGen/Shitao/OmniGen-v1``` folder.
-And finally rename `model-fp8_e4m3fn.safetensors` (3.88 GB) to `model.safetensors`. This will save 11.6 GB of download/disk.
+- You need the OmniGen-v1 model.
+  - I recommend downloading the FP8 version of the model from
+  [silveroxides/OmniGen-V1](https://huggingface.co/silveroxides/OmniGen-V1/tree/main). This is a 3.88 GB file.
+  Just download the [model-fp8_e4m3fn.safetensors](https://huggingface.co/silveroxides/OmniGen-V1/resolve/main/model-fp8_e4m3fn.safetensors)
+  file.
+  - Create a folder named ```ComfyUI/models/OmniGen/``` and move the file there.
+  - If you want to use the original model just download it from
+    [Shitao/OmniGen-v1](https://huggingface.co/Shitao/OmniGen-v1/tree/main). This version is 15.5 GB and I couldn't find a
+    difference in the results. Just download the
+    [model.safetensors](https://huggingface.co/Shitao/OmniGen-v1/resolve/main/model.safetensors) file.
+    You can move it to the same folder I recommend for the FP8 version.
+
+- You need the SDXL VAE.
+  - If you are already using SDXL this should be in ```ComfyUI/models/vae```
+  - If you don't have it download the [diffusion_pytorch_model.safetensors](https://huggingface.co/stabilityai/sdxl-vae/resolve/main/diffusion_pytorch_model.safetensors) file
+    from [stabilityai/sdxl-vae](https://huggingface.co/stabilityai/sdxl-vae/tree/main).
+  - Move the file to ```ComfyUI/models/vae```, I suggest renaming it to something like ```sdxl_vae.safetensors```
 
 
-You might also experiment downloading ```diffusion_pytorch_model.safetensors``` and ```config.json```  from
-[stabilityai/sdxl-vae](https://huggingface.co/stabilityai/sdxl-vae/tree/main), copy the two files to
-```ComfyUI/models/OmniGen/Shitao/OmniGen-v1/vae``` folder.
+You don't need the JSON files.
 
-### How to use
+## How to use
+
 Start ComfyUI, right click on screen to activate the menu, find ```Add Node``` - ```😺dzNodes``` - ```OmniGen Wrapper```, the node is here.    
 ![image](image/add_node.jpg)   
 Alternatively, enter OmniGen Wrapper in the node search bar to find the node.    
 ![image](image/search_node.jpg)
 
 ### Node Options
+
 ![image](image/omnigen_wrapper_node.jpg)
 
 * image_1: Optional input image_1. If input, this image must be described in the prompt and referred to as ```{image_1}```.
@@ -63,6 +88,8 @@ Alternatively, enter OmniGen Wrapper in the node search bar to find the node.
 * cache_model: When set to True, the model is cached and does not need to be loaded again during the next run. Strongly recommended for playing with this node.
 * move_to_ram: When set to True, keep in VRAM only the needed models. Moves to main RAM the rest. Use it if you experiments issues after inference when the VAE decodes the resulting image.
 
-###  statement
+## Statement
 
-This project follows the MIT license, Some of its functional code comes from other open-source projects. Thanks to the original author. If used for commercial purposes, please refer to the original project license to authorization agreement.
+This project follows the MIT license, Some of its functional code comes from other open-source projects.
+Thanks to the original author. If used for commercial purposes, please refer to the original project license to authorization
+agreement.
