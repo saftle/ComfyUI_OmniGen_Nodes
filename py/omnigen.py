@@ -128,7 +128,7 @@ class OmniGenProcessor:
                 "condition_1": ("OMNI_COND",),
                 "separate_cfg_infer": ("BOOLEAN", {
                     "default": True,
-                    "tooltip": "Can save memory when generating images of large size at the expense of slower inference"
+                    "tooltip": "Saves memory and in some cases is even faster"
                 }),
                 "size_from_first_image": ("BOOLEAN", {
                     "default": True, "tooltip": "Output size will be the same of the first image"
@@ -274,7 +274,6 @@ class OmniGenLoader:
     def INPUT_TYPES(s):
         return {"required": { "name": (folder_paths.get_filename_list("LLM"), ),
                               "weight_dtype": (["default", "int8"],)
-                              #"weight_dtype": (["default", "fp8_e4m3fn", "fp8_e4m3fn_fast", "fp8_e5m2"],)
                              }}
     RETURN_TYPES = ("OMNI_MODEL",)
     FUNCTION = "load_model"
