@@ -230,9 +230,6 @@ class OmniGenSampler:
                 "seed": ("INT", {
                     "default": 0, "min": 0, "max": 1e18, "step": 1
                 }),
-                "move_to_ram": ("BOOLEAN", {
-                    "default": True, "tooltip": "Keep in VRAM only the needed models. Move to main RAM the rest"
-                }),
             },
         }
 
@@ -241,7 +238,7 @@ class OmniGenSampler:
     FUNCTION = "run"
     CATEGORY = 'OmniGen'
 
-    def run(self, vae, model, conditioner, guidance_scale, img_guidance_scale, steps, use_kv_cache, seed, move_to_ram):
+    def run(self, vae, model, conditioner, guidance_scale, img_guidance_scale, steps, use_kv_cache, seed):
         # Check the target device
         device = model_management.get_torch_device()
         logging.info(f"Using {device} for the model")
@@ -260,7 +257,6 @@ class OmniGenSampler:
                            img_guidance_scale=img_guidance_scale,
                            use_kv_cache=use_kv_cache,
                            seed=seed,
-                           move_to_ram=move_to_ram,
                            vae = vae,)
 
         return ({'samples': output},)

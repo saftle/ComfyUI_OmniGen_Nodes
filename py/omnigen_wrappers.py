@@ -9,6 +9,9 @@ from safetensors.torch import load_file
 from transformers import AutoTokenizer
 import torch
 
+# Comfy_UI modules
+import model_management
+
 # OmniGen
 from OmniGen import OmniGen, OmniGenProcessor, OmniGenPipeline, OmniGenScheduler
 from OmniGen.utils import show_mem, show_shape, VAE_SCALE_FACTOR, flush_mem, free_mem
@@ -58,7 +61,6 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
                  use_kv_cache: bool = True,
                  offload_kv_cache: bool = True,
                  seed: int = None,
-                 move_to_ram: bool = False,
                  vae = None,
                  ):
         r"""
@@ -82,9 +84,6 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
             offload_model (`bool`, *optional*, defaults to False): offload the model to cpu, which can save memory but slow down the generation
             seed (`int`, *optional*):
                 A random seed for generating output.
-            move_to_ram (`bool`, *optional*, defaults to False):
-                Keep in VRAM only the needed models, otherwise move them to RAM.
-                Use it if you see allocation problems.
             vae: Comfy_UI VAE object
         Examples:
 
@@ -189,9 +188,9 @@ class OmniGenPipelineWrapper(OmniGenPipeline):
         samples = samples.chunk((1+num_cfg), dim=0)[0]
 
         show_mem()
-        if move_to_ram or self.model_cpu_offload:
-            logging.info("- Model to CPU")
-            self.model.to('cpu')
+        target = model_management.unet_offload_device()
+        logging.info(f"- Model to {target}")
+        self.model.to(target)
         show_mem()
 
         samples = samples.to(torch.float32) / VAE_SCALE_FACTOR
