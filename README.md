@@ -1,8 +1,8 @@
 # ComfyUI_OmniGen_Wrapper
 
-![image](image/omnigen_wrapper_example.jpg)    
+![image](image/omnigen_wrapper_example.jpg)
 
-This node is an unofficial wrapper of the [OmniGen](https://github.com/VectorSpaceLab/OmniGen), running in ComfyUI.    
+This node is an unofficial wrapper of the [OmniGen](https://github.com/VectorSpaceLab/OmniGen), running in ComfyUI.
 The quantization code is from [Manni1000/OmniGen](https://github.com/Manni1000/OmniGen).
 And the base node idea was from [chflame163/ComfyUI_OmniGen_Wrapper](https://github.com/chflame163/ComfyUI_OmniGen_Wrapper).
 
@@ -62,10 +62,22 @@ You don't need the JSON files.
 
 ## How to use
 
-Start ComfyUI, right click on screen to activate the menu, find ```Add Node``` - ```😺dzNodes``` - ```OmniGen Wrapper```, the node is here.    
-![image](image/add_node.jpg)   
-Alternatively, enter OmniGen Wrapper in the node search bar to find the node.    
-![image](image/search_node.jpg)
+The examples use the prompt node from [Comfyroll](https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes/).
+If you have the nodes manager extension just install the missing nodes from the manager.
+Otherwise manually install the Comfyroll nodes.
+
+### Very simple demo
+
+1. Drag and drop the following image in ComfyUI:
+
+![image](image/girl_demo_1024.png)
+
+2. Adjust the path for the model in **Omnigen Loader (set)** node
+3. Adjust the path for the VAE in **Load VAE** node
+
+Now you can play with this very simple workflow.
+The above image was generated using [this image](https://github.com/VectorSpaceLab/OmniGen/blob/main/imgs/demo_cases/t2i_woman_with_book.png)
+as input.
 
 ### Node Options
 
