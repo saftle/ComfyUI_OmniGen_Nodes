@@ -17,6 +17,21 @@ And the base node idea was from [chflame163/ComfyUI_OmniGen_Wrapper](https://git
 - This an LLM (SLM in according to Microsoft) based on [Phi-3](https://azure.microsoft.com/en-us/blog/introducing-phi-3-redefining-whats-possible-with-slms/)
   I can handle images mixed with the LLM tokes.
 
+### Requirements
+
+You'll need at least 8 GB of VRAM and during the model loading around of 24 GB of RAM.
+If you have 16 GB of main RAM you'll need swap and plenty of patient.
+
+### Feature of this node
+
+- Negative prompt
+- Upto 3 conditions
+- Int8 quantization (8 GB of VRAM is enough, not 16 GB)
+- 30% faster model load
+- FP8 safetensors model (3.88 GB download not 15.5 GB)
+- Can use installed SDXL VAE
+- Image preview and progress bar indication
+
 ## Installation
 
 ### Install the nodes
@@ -66,6 +81,8 @@ The examples use the prompt node from [Comfyroll](https://github.com/Suzie1/Comf
 If you have the nodes manager extension just install the missing nodes from the manager.
 Otherwise manually install the Comfyroll nodes.
 
+Important note: the original work uses
+
 ### Very simple demo
 
 1. Drag and drop the following image in ComfyUI:
@@ -76,29 +93,128 @@ Otherwise manually install the Comfyroll nodes.
 3. Adjust the path for the VAE in **Load VAE** node
 
 Now you can play with this very simple workflow.
+
 The above image was generated using [this image](https://github.com/VectorSpaceLab/OmniGen/blob/main/imgs/demo_cases/t2i_woman_with_book.png)
 as input.
 
-### Node Options
+Here the prompt asks to remove the earrings and change the cup of coffee by a glass of coke.
 
-![image](image/omnigen_wrapper_node.jpg)
+### Compact demo
 
-* image_1: Optional input image_1. If input, this image must be described in the prompt and referred to as ```{image_1}```.
-* image_2: Optional input image_2. If input, this image must be described in the prompt and referred to as ```{image_2}```.
-* image_3: Optional input image_3. If input, this image must be described in the prompt and referred to as ```{image_3}```.
-* dtype: Model accuracy, default is the default model accuracy, optional int8. The default precision occupies approximately 12GB of video memory, while int8 occupies approximately 7GB of video memory.
-* prompt: The prompt or prompts to guide the image generation. If have image input, use the placeholder ```{image_1}```, ```{image_2}```, ```{image_3}``` to refer to it.
-* width: The height in pixels of the generated image. The number must be a multiple of 16.
-* height: The width in pixels of the generated image. The number must be a multiple of 16.
-* guidance_scale: A higher value will make the generated results of the model more biased towards the condition, but may sacrifice the diversity and degrees of freedom of the image.
-* image_guidance_scale: The guidance scale of image.
-* steps: The number of denoising steps. More denoising steps usually lead to a higher quality image at the expense of slower inference.
-* separate_cfg_infer: Perform inference on images with different guidance separately; this can save memory when generating images of large size at the expense of slower inference.
-* use_kv_cache: Enable kv cache to speed up the inference
-* seed: A random seed for generating output.
-* control_after_generate: Seed value change option every time it runs.
-* cache_model: When set to True, the model is cached and does not need to be loaded again during the next run. Strongly recommended for playing with this node.
-* move_to_ram: When set to True, keep in VRAM only the needed models. Moves to main RAM the rest. Use it if you experiments issues after inference when the VAE decodes the resulting image.
+If you like compact nodes just use the following: [simplified.json](https://github.com/set-soft/ComfyUI_OmniGen_Nodes/blob/dev/examples/simplified.json)
+
+### Nodes
+
+- For the VAE just use the stock ComfyUI core VAE loader.
+- For prompts use any node that allows entering text as a string.
+  Note that you can also convert the prompt inputs to widgets by selecting the node and pressing right mouse button,
+  then select "Convert input to widget".
+
+#### OmniGen Loader (set)
+
+This node is used to load the OmniGen model. It takes quite time to load. On my system around 25 seconds.
+I reduced it from 36 seconds to 25 avoiding the initialization of some stuff. But more work is needed.
+
+- **name** select the model name. Note that this node will scan ```ComfyUI/OmniGen``` but also ```ComfyUI/LLM```.
+- **weight_dtype** use *int8* unless you have plenty of VRAM (24 GB or more) and you want the best quality possible.
+
+#### OmniGen Conditioner (set)
+
+This node is used to:
+
+1. Ensure the images are in continuous. If you have 2 images they must be connected to *image_1* and *image_2*.
+2. Resize the images to make them fit in the specified size.
+3. Ensure the image sizes are multiple of 16
+4. Replace the ```{image_1}```, ```{image_2}``` and ```{image_3}``` tags to the tags used by the model (<img><|image_N|></img>).
+
+All images are optional, but using this model with just a text prompt isn't interesting.
+
+Inputs:
+
+- **image_1**: The image referred as ```{image_1}``` or just ```image_1``` in the prompt
+- **image_2**: The image referred as ```{image_2}``` or just ```image_2``` in the prompt
+- **image_3**: The image referred as ```{image_3}``` or just ```image_3``` in the prompt
+- **prompt**: Instructions about what to do, note that internally the model receives *Generate an image according to the following
+  instructions* and then the text you enter here.
+- **negative**: An optional negative prompt. If you don't provide one the code uses an internal one (low quality, jpeg artifacts,
+  ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, "poorly drawn hands, poorly drawn face, mutation, deformed,
+  blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs,
+  missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers).
+
+Outputs:
+
+- **conditioner**: The information to condition the image generation validated and compacted in one connection.
+- **crp_img_1**: The **image_1** input after adjusting its size. You can connect a "Preview Image" node here to see what exactly
+  is receiving the model.
+- **crp_img_2**: Same as **crp_img_1** but for **image_2**
+- **crp_img_3**: Same as **crp_img_1** but for **image_3**
+
+Parameters:
+
+- **max_input_image_size**: The maximum size allowed in any of the directions. The 1024 value is a good one.
+  Using bigger values you risk to use a very big image as input and end using tons of VRAM, and waiting forever.
+  Using things like 512 might work, but this model needs "space" to work, some tasks aren't acomplished using 512x512 images.
+
+#### OmniGen Processor (set)
+
+This node takes the output of one or more ```OmniGen Conditioner (set)``` nodes and creates the tensors used to condition the model.
+The process includes converting the prompts into tokens and providing space for the image latents.
+Conditions are padded and attention masks created.
+
+The sampler will generate one image for each condition, but the generated images are all affected by the conditions.
+Isn't just a batch.
+
+Inputs:
+
+- **condition_1**: The output of an ```OmniGen Conditioner (set)``` to condition the first image generated
+- **condition_2**: The output of an ```OmniGen Conditioner (set)``` to condition the second image generated
+- **condition_3**: The output of an ```OmniGen Conditioner (set)``` to condition the third image generated
+
+Outputs:
+
+- **conditioners**: The tensors used to condition the image generation
+
+Parameters:
+- **separate_cfg_infer**: When enabled the conditions are applied one by one. This saves memory.
+  When disabled the coditions are sent as batches. Note that sometimes this option not only saves time, but is also faster.
+- **size_from_first_image**: Uses the size of the first image (from all the conditions) as the size of the output image.
+- **width**: Width of the output image when **size_from_first_image** is disabled.
+- **height**: Height of the output image when **size_from_first_image** is disabled.
+
+As mentioned before: the model works better with 1024x1024 images, the 512x512 values used as defaults are to make it faster.
+
+
+#### OmniGen Sampler (set)
+
+This is the node that generates the image.
+
+Inputs:
+
+- **vae**: The Variable AutoEncoder (VAE) used to encode the input images into latent space. This must be the SDXL VAE.
+  Connect a "Load VAE" node here.
+- **model**: The OnmiGen-v1 model from the "OmniGen Loader (set)" node.
+- **conditioner**: The generation conditions from the "OmniGen Processor (set)" node.
+
+Outputs:
+
+- **latent**: The image, or images, generated in latent format. Use a "VAE Decode" node to get an image.
+  When using small number of steps you might want to connect a "LatentMultiply" node first, then adjust the the value to
+  adjust the image luminosity. Start at 1. Useful if you get burned images.
+
+Parameters:
+
+- **guidance_scale**: How strong is the text prompt. The value must be between 1 and 5.
+  Is the guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
+  **guidance_scale** is defined as **w** of equation 2 of [Imagen Paper](https://arxiv.org/pdf/2205.11487.pdf).
+  Higher values makes the model to follow better the prompt, but cutting its freedom the quality gets lower.
+- **img_guidance_scale**: How strong is the image guidance. The value must be between 1 and 2.
+  Defined as equation 3 in [Instrucpix2pix](https://arxiv.org/pdf/2211.09800).
+- **steps**: How many steps. More steps gives better quality, but takes more time. Using 5 is enough in same cases.
+  In other cases you'll need as much as 50.
+- **use_kv_cache**: Enable K/V (key/value) cache to speed up the inference. I don't recommend it because in the cases I tried the
+  inference is faster but you'll need much more steps.
+- **seed**: The random seed used to generate the initial noise latents.
+
 
 ## Statement
 
