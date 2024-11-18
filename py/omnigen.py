@@ -225,7 +225,7 @@ class OmniGenSampler:
                 }),
                 "use_kv_cache": ("BOOLEAN", {
                     "default": False,
-                    "tooltip": "Enable kv cache to speed up the inference"
+                    "tooltip": "Enable K/V cache to speed up the inference, but slows down the convergence. Needs CUDA"
                 }),
                 "seed": ("INT", {
                     "default": 0, "min": 0, "max": 1e18, "step": 1
