@@ -6,6 +6,21 @@ This node is an unofficial wrapper of the [OmniGen](https://github.com/VectorSpa
 The quantization code is from [Manni1000/OmniGen](https://github.com/Manni1000/OmniGen).
 And the base node idea was from [chflame163/ComfyUI_OmniGen_Wrapper](https://github.com/chflame163/ComfyUI_OmniGen_Wrapper).
 
+* [Introduction](#introduction)
+  * [Requirements](#requirements)
+  * [Features of this node](#features-of-this-node)
+* [Installation](#installation)
+  * [Install the nodes](#install-the-nodes)
+  * [Install dependencies](#install-dependencies)
+  * [Download models](#download-models)
+* [How to use](#how-to-use)
+  * [Very simple demo](#very-simple-demo)
+  * [Compact demo](#compact-demo)
+  * [Nodes](#nodes)
+    * [OmniGen Loader (set)](#omnigen-loader-set)
+    * [OmniGen Conditioner (set)](#omnigen-conditioner-set)
+    * [OmniGen Processor (set)](#omnigen-processor-set)
+    * [OmniGen Sampler (set)](#omnigen-sampler-set)
 
 ## Introduction
 
@@ -15,14 +30,14 @@ And the base node idea was from [chflame163/ComfyUI_OmniGen_Wrapper](https://git
 - It consumes plenty of VRAM, in my tests 6 GB were enough to play with the model, but as you add more images and
   increase their size the memory consumption scales.
 - This an LLM (SLM in according to Microsoft) based on [Phi-3](https://azure.microsoft.com/en-us/blog/introducing-phi-3-redefining-whats-possible-with-slms/)
-  I can handle images mixed with the LLM tokes.
+  and can handle images mixed with the LLM tokens.
 
 ### Requirements
 
 You'll need at least 8 GB of VRAM and during the model loading around of 24 GB of RAM.
 If you have 16 GB of main RAM you'll need swap and plenty of patient.
 
-### Feature of this node
+### Features of this node
 
 - Negative prompt
 - Upto 3 conditions
