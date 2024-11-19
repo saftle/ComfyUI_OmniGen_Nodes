@@ -16,6 +16,7 @@ And the base node idea was from [chflame163/ComfyUI_OmniGen_Wrapper](https://git
 * [How to use](#how-to-use)
   * [Very simple demo](#very-simple-demo)
   * [Compact demo](#compact-demo)
+  * [More examples](#more-examples)
   * [Nodes](#nodes)
     * [OmniGen Loader (set)](#omnigen-loader-set)
     * [OmniGen Conditioner (set)](#omnigen-conditioner-set)
@@ -117,6 +118,10 @@ Here the prompt asks to remove the earrings and change the cup of coffee by a gl
 ### Compact demo
 
 If you like compact nodes just use the following: [simplified.json](https://github.com/set-soft/ComfyUI_OmniGen_Nodes/blob/dev/examples/simplified.json)
+
+### More examples
+
+Just visit the [examples repo](https://github.com/set-soft/ComfyUI_OmniGen_Demos/)
 
 ### Nodes
 

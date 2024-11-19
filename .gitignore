@@ -4,3 +4,6 @@ __pycache__
 .idea
 *.pth
 *.ini
+*.epr
+.*
+ori/
