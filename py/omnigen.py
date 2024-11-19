@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2024 Salvador E. Tropea
+# License: MIT
+# Project: ComfyUI OmniGen Nodes
+
 # Python modules
 import logging
 import os

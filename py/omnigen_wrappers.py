@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2024 Salvador E. Tropea
+# License: MIT
+# Project: ComfyUI OmniGen Nodes
+
 # This code is used to call some components of OmniGen in a different order
 # Python base modules
 import logging
