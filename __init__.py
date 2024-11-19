@@ -31,6 +31,6 @@ for file in files:
     except:
         pass
 
-print(f"# 😺 ComfyUI_OmniGen_Wrapper: -> " + '\033[1;32m' + f"Success loaded {len(NODE_CLASS_MAPPINGS)} nodes." + '\033[m')
+print(f"# ComfyUI_OmniGen_Nodes: -> " + '\033[1;32m' + f"Success loaded {len(NODE_CLASS_MAPPINGS)} nodes." + '\033[m')
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

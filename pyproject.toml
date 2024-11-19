@@ -1,15 +1,15 @@
 [project]
-name = "ComfyUI_OmniGen_Wrapper"
-description = "ComfyUI custom node of OmniGen project."
-version = "1.0.3"
+name = "ComfyUI_OmniGen_Nodes"
+description = "ComfyUI custom nodes for OmniGen project."
+version = "1.0.0"
 license = "MIT"
 dependencies = ["transformers", "diffusers", "numpy", "datasets", accelerate", "timm", "peft", "safetensors", "huggingface_hub"]
 
 [project.urls]
-Repository = "https://github.com/chflame163/ComfyUI_OmniGen_Wrapper"
+Repository = "https://github.com/set-soft/ComfyUI_OmniGen_Nodes"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
-PublisherId = "chflame163"
-DisplayName = "ComfyUI_OmniGen_Wrapper"
+PublisherId = "set-soft"
+DisplayName = "ComfyUI_OmniGen_Nodes"
 Icon = ""
