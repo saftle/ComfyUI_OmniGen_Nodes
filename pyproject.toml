@@ -1,6 +1,6 @@
 [project]
 name = "ComfyUI_OmniGen_Nodes"
-description = "ComfyUI custom nodes for OmniGen project."
+description = "ComfyUI custom nodes for OmniGen project. Low VRAM, preview, separated VAE and more"
 version = "1.0.0"
 license = "MIT"
 dependencies = ["transformers", "diffusers", "numpy", "datasets", accelerate", "timm", "peft", "safetensors", "huggingface_hub"]
