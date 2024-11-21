@@ -1,9 +1,9 @@
 [project]
-name = "ComfyUI_OmniGen_Nodes"
+name = "omnigen-set"
 description = "ComfyUI custom nodes for OmniGen project. Low VRAM, preview, separated VAE and more"
 version = "1.0.0"
-license = "MIT"
-dependencies = ["transformers", "diffusers", "numpy", "datasets", accelerate", "timm", "peft", "safetensors", "huggingface_hub"]
+license = {text = "MIT License"}
+dependencies = ["transformers", "diffusers", "numpy", "datasets", "accelerate", "timm", "peft", "safetensors", "huggingface_hub"]
 
 [project.urls]
 Repository = "https://github.com/set-soft/ComfyUI_OmniGen_Nodes"
