@@ -1,7 +1,7 @@
 [project]
 name = "omnigen-set"
 description = "ComfyUI custom nodes for OmniGen project. Low VRAM, preview, separated VAE and more"
-version = "1.0.0"
+version = "1.0.1"
 license = {text = "MIT License"}
 dependencies = ["transformers", "diffusers", "numpy", "datasets", "accelerate", "timm", "peft", "safetensors", "huggingface_hub"]
 
