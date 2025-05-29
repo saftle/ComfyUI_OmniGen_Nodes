@@ -1,5 +1,5 @@
 transformers>=4.45.0
-diffusers>=0.29.0
+diffusers>=0.33.1
 numpy<2
 datasets
 accelerate
